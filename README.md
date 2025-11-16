@@ -1,6 +1,6 @@
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <mNoeta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>webshell.app</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -515,7 +515,8 @@
     <div id="start-menu" class="fixed blur-backdrop start-menu-bg shadow-2xl p-6 z-[3000]">
         <div id="start-menu-grid" class="grid grid-cols-6 gap-4">
             <h3 class="col-span-6 text-lg font-semibold mb-2">All Apps</h3>
-            </div>
+            <!-- App icons will be dynamically inserted here by renderStartMenu() -->
+        </div>
     </div>
 
     <footer id="taskbar" class="fixed bottom-0 left-0 right-0 blur-backdrop taskbar-bg flex justify-start px-4 z-[2000]">
@@ -571,7 +572,15 @@
                             'user': { 'type': 'directory', 'children': {
                                     'Documents': { 'type': 'directory', 'children': { 'report.docx': { 'type': 'file', 'content': 'This is a simulated Word document.' } } },
                                     'Downloads': { 'type': 'directory', 'children': {} },
-                                    'ver.txt': { 'type': 'file', 'content': 'Last updated 11-16-25\nCore OS Polaris\nWeb UI 0.21.4\n\nThis project is at extremely early-stage!' }
+                                    'Applications': { 'type': 'directory', 'children': {
+                                        'Colors.app': { 'type': 'app', 'content': 'colors' },
+                                        'Images.app': { 'type': 'app', 'content': 'images' },
+                                        'Minesweeper.app': { 'type': 'app', 'content': 'minesweeper' },
+                                        'Numbers.app': { 'type': 'app', 'content': 'numbers' },
+                                        'Texts.app': { 'type': 'app', 'content': 'texts' },
+                                        'zDevUpload.app': { 'type': 'app', 'content': 'zdeupload' }
+                                    }},
+                                    'ver.txt': { 'type': 'file', 'content': 'Last updated 11-17-25\nCore OS Polaris\nWeb UI 0.22.0\n\nThis project is at extremely early-stage!' }
                                 }
                             }
                         }
@@ -581,6 +590,13 @@
             };
             
             let fileSystem; // This will be our live, mutable VFS object
+
+            // getFileSystemNode must be defined *before* initializeVFS
+            function getFileSystemNode(path) {
+                if (!fileSystem) return null; // Guard against uninitialized VFS
+                if (path === '/') return fileSystem; // Handle root
+                return path.split('/').filter(p => p).reduce((node, part) => (node && node.type === 'directory' && node.children[part]) ? node.children[part] : null, fileSystem);
+            }
 
             function saveVFSToLocalStorage() {
                 try {
@@ -599,6 +615,18 @@
                         if (!fileSystem.type || !fileSystem.children) {
                            throw new Error("Invalid VFS structure.");
                         }
+
+                        // --- VFS MIGRATION START ---
+                        // Ensure /home/user/Applications exists for older saved VFS
+                        const userNode = getFileSystemNode('/home/user');
+                        if (userNode && userNode.type === 'directory' && !userNode.children['Applications']) {
+                            console.log("Migrating VFS: Adding Applications directory.");
+                            const defaultAppsDir = defaultFileSystem.children.home.children.user.children.Applications;
+                            userNode.children['Applications'] = JSON.parse(JSON.stringify(defaultAppsDir)); // Deep copy
+                            saveVFSToLocalStorage();
+                        }
+                        // --- VFS MIGRATION END ---
+
                     } catch (e) {
                         console.error("Error parsing VFS from localStorage, resetting:", e);
                         fileSystem = JSON.parse(JSON.stringify(defaultFileSystem)); // Deep copy
@@ -610,6 +638,9 @@
                 }
             }
             // --- End VFS ---
+            
+            // --- App Configuration ---
+            const systemApps = ['preferences', 'files']; // Apps that are not deletable
             
             const appConfig = {
                 preferences: {
@@ -672,6 +703,7 @@
                            <button data-path="/home/user" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Home</button>
                            <button data-path="/home/user/Documents" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Documents</button>
                            <button data-path="/home/user/Downloads" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Downloads</button>
+                           <button data-path="/home/user/Applications" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Applications</button>
                         </div>
                         <div class="files-main">
                             <div class="files-breadcrumbs p-2 border-b border-black/10 dark:border-white/10">/</div>
@@ -720,6 +752,7 @@
                     </div>`, width: '400px', height: '460px'
                 }
             };
+            // --- End App Config ---
 
             function animateClick(element) {
                 if (!element) return;
@@ -1171,11 +1204,7 @@
             }
 
             // --- Files & Texts Logic ---
-            function getFileSystemNode(path) {
-                if (!fileSystem) return null; // Guard against uninitialized VFS
-                if (path === '/') return fileSystem; // Handle root
-                return path.split('/').filter(p => p).reduce((node, part) => (node && node.type === 'directory' && node.children[part]) ? node.children[part] : null, fileSystem);
-            }
+            // getFileSystemNode() is now defined at the top with VFS logic
 
             // *** START REPLACEMENT: renderFileSystem ***
             function renderFileSystem(win, path) {
@@ -1200,8 +1229,9 @@
                     // --- START MODIFICATION ---
                     // Check for file type to assign correct icon
                     const isDirectory = childNode.type === 'directory';
-                    const isImage = !isDirectory && ['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext));
-                    const icon = isDirectory ? '📁' : (isImage ? '🖼️' : '📄');
+                    const isApp = childNode.type === 'app';
+                    const isImage = !isDirectory && !isApp && ['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext));
+                    const icon = isDirectory ? '📁' : (isApp ? '🚀' : (isImage ? '🖼️' : '📄'));
                     // --- END MODIFICATION ---
 
                     item.innerHTML = `<div class="text-4xl pointer-events-none">${icon}</div><span class="text-xs mt-1 truncate w-full pointer-events-none">${name}</span>`;
@@ -1211,6 +1241,8 @@
                     // Left click actions
                     if (childNode.type === 'directory') {
                         item.onclick = () => renderFileSystem(win, fullPath);
+                    } else if (childNode.type === 'app') {
+                        item.onclick = () => createWindow(childNode.content); // Use content as appId
                     } else if (name.endsWith('.txt') || name.endsWith('.conf')) {
                         item.onclick = () => openFileInTexts(fullPath);
                     } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
@@ -1292,9 +1324,9 @@
                         { label: 'Save', class: 'btn-accent', action: () => {
                             let fileName = input.value.trim() || 'Untitled.txt';
                             if (!fileName.endsWith('.txt')) fileName += '.txt';
-                            const homeNode = getFileSystemNode('/home/user');
+                            const homeNode = getFileSystemNode('/home/user/Documents'); // Save in Documents
                             homeNode.children[fileName] = { type: 'file', content: newContent };
-                            const newPath = `/home/user/${fileName}`;
+                            const newPath = `/home/user/Documents/${fileName}`;
                             win.dataset.filePath = newPath;
                             win.dataset.originalContent = newContent;
                             win.querySelector('.title-bar span').textContent = `${fileName} - Texts`;
@@ -1306,7 +1338,27 @@
 
             // --- Window Management ---
             function createWindow(appId) {
-                if (!appConfig[appId]) return null;
+                if (!appConfig[appId]) {
+                    console.error(`App config not found for: ${appId}`);
+                    return null;
+                }
+
+                // --- START OF NEW CHECK ---
+                // Check if the app is "installed" in the VFS
+                if (!systemApps.includes(appId)) {
+                    const vfsAppIds = getVFSApps().map(app => app.appId);
+                    if (!vfsAppIds.includes(appId)) {
+                        const config = appConfig[appId];
+                        const appFileName = `${config.title}.app`;
+                        showModal("Application not found", 
+                            `Cannot open ${config.title}. The file "${appFileName}" was not found in /home/user/Applications.`,
+                            [{ label: 'OK' }]
+                        );
+                        return null; // Stop execution
+                    }
+                }
+                // --- END OF NEW CHECK ---
+
                 const config = appConfig[appId];
 
                 if (!config.multiInstance) {
@@ -1380,6 +1432,8 @@
                                                 renderFileSystem(w.element, w.element.dataset.currentPath || '/');
                                             }
                                         });
+                                        // Refresh the start menu
+                                        renderStartMenu();
                                     }}
                                 ]
                             );
@@ -1596,36 +1650,63 @@
                 });
             }
             
-            function renderStartMenu() {
-                const appsContainer = document.createElement('div');
-                appsContainer.className = 'app-icon-container col-span-6 grid grid-cols-6 gap-y-6';
+            // --- New helper function to get VFS apps ---
+            function getVFSApps() {
+                const appsNode = getFileSystemNode('/home/user/Applications');
+                if (!appsNode || appsNode.type !== 'directory') {
+                    return []; // No apps directory found
+                }
                 
-                // Sort the app IDs based on their title
-                const sortedAppIds = Object.keys(appConfig).sort((a, b) => {
-                    const titleA = appConfig[a].title.toLowerCase();
-                    const titleB = appConfig[b].title.toLowerCase();
+                return Object.entries(appsNode.children)
+                    .filter(([name, node]) => node.type === 'app' && appConfig[node.content])
+                    .map(([name, node]) => ({
+                        appId: node.content,
+                        title: appConfig[node.content].title
+                    }));
+            }
+            
+            function renderStartMenu() {
+                // Find the container, or clear it if it exists
+                let appsContainer = startMenuGrid.querySelector('.app-icon-container');
+                if (appsContainer) {
+                    appsContainer.innerHTML = ''; // Clear existing icons
+                } else {
+                    appsContainer = document.createElement('div');
+                    appsContainer.className = 'app-icon-container col-span-6 grid grid-cols-6 gap-y-6';
+                    startMenuGrid.appendChild(appsContainer);
+                }
+
+                // 1. Get all apps from appConfig
+                const allApps = Object.keys(appConfig).map(appId => ({
+                    appId,
+                    title: appConfig[appId].title
+                }));
+                
+                // 2. Sort
+                allApps.sort((a, b) => {
+                    const titleA = a.title.toLowerCase();
+                    const titleB = b.title.toLowerCase();
                     if (titleA < titleB) return -1;
                     if (titleA > titleB) return 1;
                     return 0;
                 });
 
-                sortedAppIds.forEach(appId => {
-                    const config = appConfig[appId];
+                // 3. Render
+                allApps.forEach(app => {
+                    const config = appConfig[app.appId];
                     const btn = document.createElement('button');
                     btn.className = 'app-launcher flex flex-col items-center justify-center p-2 hover:bg-white/20 transition-colors';
-                    btn.dataset.appId = appId;
+                    btn.dataset.appId = app.appId;
                     btn.innerHTML = `<img src="${config.icon}" class="w-12 h-12" alt="${config.title} Icon"><span class="text-xs mt-2">${config.title}</span>`;
                     btn.onclick = (e) => { 
                         animateClick(e.currentTarget);
                         setTimeout(() => {
-                            createWindow(appId);
+                            createWindow(app.appId);
                             startMenu.classList.remove('show');
                         }, 100);
                     };
                     appsContainer.appendChild(btn);
-                    
                 });
-                startMenuGrid.appendChild(appsContainer);
             }
             
             // App initializers
@@ -1953,13 +2034,36 @@
                 const parentNode = getFileSystemNode(currentPath);
                 
                 if (parentNode && parentNode.children[filename]) {
-                    // Confirm deletion
+                    
                     showModal('Delete Item', `Are you sure you want to delete "${filename}"?`, [
                         { label: 'Cancel' },
-                        { label: 'Delete', class: 'btn-accent', action: () => {
+                        { label: 'Delete', class: 'btn-danger', action: () => {
+                            
+                            const fileNode = parentNode.children[filename];
+                            // Check if we are deleting an app from the Applications directory
+                            const isApp = currentPath === '/home/user/Applications' && fileNode.type === 'app';
+                            const appIdToDelete = isApp ? fileNode.content : null;
+                            
+
+                            // Delete the file
                             delete parentNode.children[filename];
                             saveVFSToLocalStorage(); // <-- Persist VFS
-                            renderFileSystem(win, currentPath);
+                            renderFileSystem(win, currentPath); // Refresh Files window
+
+                            
+                            if (isApp && appIdToDelete) {
+                                console.log(`App ${appIdToDelete} deleted. Closing instances.`);
+                                // Re-render the start menu
+                                // renderStartMenu(); // No longer needed, start menu is static
+                                
+                                // Close all running instances of this app
+                                Object.values(openWindows).forEach(w => {
+                                    if (w.appId === appIdToDelete) {
+                                        closeWindow(w.element, true); // Force close
+                                    }
+                                });
+                            }
+                            
                         }}
                     ]);
                 }
@@ -2043,7 +2147,7 @@
             applyInitialTheme();
             initializeVFS(); // <-- Load VFS from localStorage
             renderPinnedApps();
-            renderStartMenu();
+            renderStartMenu(); // <-- Now reads from VFS
             createWindow('preferences');
         });
     </script>
