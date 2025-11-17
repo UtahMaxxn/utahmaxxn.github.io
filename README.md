@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -56,7 +55,7 @@
 
         body {
             font-family: 'Product Sans', sans-serif;
-            background-image: url('PASTE_YOUR_BASE64_HERE');
+            background-image: url('PASTE_YOUR_BASE64_ENCODED_IMAGE_HERE_IF_YOU_WANT_A_WALLPAPER)');
             background-size: cover;
             background-position: center;
             overflow: hidden;
@@ -179,6 +178,14 @@
         }
         .taskbar-item.active::after {
             width: 20px;
+        }
+        
+        /* New Spotlight Icon Style */
+        .spotlight-icon {
+            width: 18px;
+            height: 18px;
+            background-color: var(--text-color);
+            border-radius: 50%;
         }
 
         /* --- New Search Menu Styles --- */
@@ -595,12 +602,9 @@
 
     <footer id="taskbar" class="fixed bottom-0 left-0 right-0 blur-backdrop taskbar-bg flex justify-start px-4 z-[2000]">
         <div class="flex items-center gap-2">
-            <button id="start-btn" class="taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
-                <!-- New Search Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
+            <button id="start-btn" class="taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center justify-center">
+                <!-- New Spotlight Icon -->
+                <span class="spotlight-icon"></span>
             </button>
             
             <div id="pinned-apps" class="flex items-center gap-2">
@@ -723,6 +727,13 @@
                 if (homeUser && !homeUser.children['Applications']) {
                     console.log("Migrating VFS: Adding /Applications directory.");
                     homeUser.children['Applications'] = { type: 'directory', children: {} };
+                }
+                
+                // --- VFS Cleanup: Remove orphaned SearchExperience.app ---
+                let appsDir = getFileSystemNode('/home/user/Applications');
+                if (appsDir && appsDir.children['SearchExperience.app']) {
+                    console.log("VFS Cleanup: Removing old SearchExperience.app");
+                    delete appsDir.children['SearchExperience.app'];
                 }
 
                 // Populate .app files
@@ -1000,7 +1011,7 @@
 
                 // Search Apps
                 Object.keys(appConfig).forEach(appId => {
-                    // if (appId === 'search') return; // No longer needed, search doesn't show itself
+                    if (appId === 'search') return; // <-- BUG FIX: This line was commented out
                     
                     const config = appConfig[appId];
                     if (config.title.toLowerCase().includes(lowerQuery)) {
@@ -1030,6 +1041,9 @@
                     Object.keys(node.children).forEach(name => {
                         const childNode = node.children[name];
                         const fullPath = `${path === '/' ? '' : path}/${name}`;
+                        
+                        // --- BUG FIX: Don't show SearchExperience.app in results ---
+                        if (name === 'SearchExperience.app') return;
 
                         if (name.toLowerCase().includes(lowerQuery) && childNode.type !== 'app') {
                             let icon = '📄';
@@ -1476,7 +1490,7 @@
                 grid.innerHTML = '';
                 Object.entries(node.children).forEach(([name, childNode]) => {
                     // --- HIDE SearchExperience.app ---
-                    if (name === 'SearchExperience.app') return;
+                    // if (name === 'SearchExperience.app') return; // No longer needed
 
                     const item = document.createElement('button');
                     item.dataset.filename = name;
