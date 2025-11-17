@@ -1,6 +1,7 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <mNoeta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>webshell.app</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,15 +16,15 @@
 
         :root {
             --taskbar-height: 48px;
-            --start-menu-width: 500px;
-            --start-menu-height: 600px;
+            /* --start-menu-width: 500px; */ /* Removed */
+            /* --start-menu-height: 600px; */ /* Removed */
 
             /* Light Theme */
             --text-color: #1f1f1f;
             --text-color-light: #6b7280;
             --window-bg: rgba(242, 242, 242, 0.75);
             --taskbar-bg: rgba(242, 242, 242, 0.6);
-            --start-menu-bg: rgba(225, 225, 225, 0.7);
+            --start-menu-bg: rgba(225, 225, 225, 0.7); /* Keeping this var name for the search bg */
             --hover-bg: rgba(0, 0, 0, 0.08);
             --close-hover-bg: #e81123;
             --close-hover-text: white;
@@ -55,7 +56,7 @@
 
         body {
             font-family: 'Product Sans', sans-serif;
-            background-image: url('https://placehold.co/1920x1080/0a2a40/ffffff?text=shhh...\\nlet%27s%20not%20leak\\nour%20hard%20work');
+            background-image: url('PASTE_YOUR_BASE64_HERE');
             background-size: cover;
             background-position: center;
             overflow: hidden;
@@ -87,10 +88,6 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.18);
             
-            /*
-              FIX: Removed width, height, top, left transitions from the default state
-              to prevent drag/resize lag.
-            */
             transition: opacity 0.2s, transform 0.2s, border-radius 0.2s ease;
                         
             position: absolute;
@@ -102,7 +99,6 @@
             overflow: auto;
         }
 
-        /* This new class will be added *only* during maximize/restore */
         .window.transitioning {
             transition: opacity 0.2s, transform 0.2s, border-radius 0.2s ease,
                         width 0.25s cubic-bezier(0.25, 1, 0.5, 1), 
@@ -185,23 +181,95 @@
             width: 20px;
         }
 
-        /* Start Menu */
-        #start-menu {
-            width: var(--start-menu-width);
-            height: var(--start-menu-height);
-            bottom: calc(var(--taskbar-height) + 8px);
-            left: 16px; 
-            transform: scale(0.95) translateY(10px);
+        /* --- New Search Menu Styles --- */
+        #search-menu {
+            position: fixed;
+            width: 600px;
+            max-width: 90vw;
+            top: 20vh; /* Position from top */
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             opacity: 0;
             visibility: hidden;
             transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, visibility 0.2s;
-            transform-origin: bottom left;
+            transform-origin: top center;
         }
-        #start-menu.show {
-            transform: scale(1) translateY(0);
+        #search-menu.show {
+            transform: translateX(-50%) scale(1);
             opacity: 1;
             visibility: visible;
         }
+        
+        #search-input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1.25rem;
+            background-color: transparent;
+            border: none;
+            outline: none;
+            border-bottom: 1px solid var(--separator-bg);
+            flex-shrink: 0;
+            color: var(--text-color);
+        }
+        #search-input::placeholder {
+            color: var(--text-color-light);
+        }
+        
+        #search-results {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        .search-result-item:hover {
+            background-color: var(--hover-bg);
+        }
+        /* New 'selected' style for keyboard navigation */
+        .search-result-item.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .search-result-item.selected .search-result-path {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-result-icon {
+            font-size: 1.5rem;
+            width: 32px;
+            text-align: center;
+        }
+        .search-result-details {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .search-result-title {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .search-result-path {
+            font-size: 0.75rem;
+            color: var(--text-color-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
 
         /* Clock Flyout */
         #clock-flyout {
@@ -319,10 +387,14 @@
         body.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
         ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.4); }
         body.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+        /* Scrollbar for Search Menu */
+        #search-results::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.3); }
+        body.dark #search-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
+
 
         /* App-specific Styles */
         .calculator-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
-        .calc-display { background-color: rgba(0,0,0,0.1); word-wrap: break-word; word-break: break-all; }
+        .calc-display { /* background-color: rgba(0,0,0,0.1); */ border-bottom: 1px solid var(--separator-bg); word-wrap: break-word; word-break: break-all; }
         .calc-btn { background-color: var(--calc-btn-bg); transition: background-color .15s ease; }
         .calc-btn:hover { background-color: var(--calc-btn-hover-bg); }
         .calc-btn.operator { background-color: var(--calc-operator-bg); }
@@ -338,8 +410,8 @@
         .files-grid-container { flex-grow: 1; overflow-y: auto; }
 
         .colors-app { display: flex; height: 100%; }
-        .colors-toolbar { width: 60px; flex-shrink: 0; background-color: rgba(0,0,0,0.05); }
-        body.dark .colors-toolbar { background-color: rgba(255,255,255,0.05); }
+        .colors-toolbar { width: 60px; flex-shrink: 0; /* background-color: rgba(0,0,0,0.05); */ border-right: 1px solid var(--separator-bg); }
+        body.dark .colors-toolbar { /* background-color: rgba(255,255,255,0.05); */ }
         .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
         .color-swatch.active { border-color: var(--accent-color); }
         .colors-canvas { 
@@ -474,7 +546,8 @@
         .rounded-md:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch), 
         .rounded-sm:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch), 
         .rounded-full:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch):not(.calendar-day),
-        #start-menu, #context-menu, #modal-box, .window, #clock-flyout {
+        #search-menu, /* Added search menu */
+        #context-menu, #modal-box, .window, #clock-flyout {
             border-radius: 0 !important;
         }
         .title-bar, .content-area {
@@ -511,18 +584,23 @@
         <div class="calendar-grid grid grid-cols-7 gap-1 text-center"></div>
     </div>
 
-
-    <div id="start-menu" class="fixed blur-backdrop start-menu-bg shadow-2xl p-6 z-[3000]">
-        <div id="start-menu-grid" class="grid grid-cols-6 gap-4">
-            <h3 class="col-span-6 text-lg font-semibold mb-2">All Apps</h3>
-            <!-- App icons will be dynamically inserted here by renderStartMenu() -->
+    <!-- --- New Search Menu HTML --- -->
+    <div id="search-menu" class="fixed blur-backdrop start-menu-bg shadow-2xl z-[3000]">
+        <input type="text" id="search-input" placeholder="Search apps and files...">
+        <div id="search-results">
+            <!-- Search results will be dynamically generated here -->
         </div>
     </div>
+
 
     <footer id="taskbar" class="fixed bottom-0 left-0 right-0 blur-backdrop taskbar-bg flex justify-start px-4 z-[2000]">
         <div class="flex items-center gap-2">
             <button id="start-btn" class="taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M5.5 2h13a2.5 2.5 0 0 1 2.5 2.5v13a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 19.5v-13A2.5 2.5 0 0 1 5.5 2zM9 10.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0 6a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm5.5-6a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0 6a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                <!-- New Search Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
             </button>
             
             <div id="pinned-apps" class="flex items-center gap-2">
@@ -544,8 +622,12 @@
             const taskbarApps = document.getElementById('taskbar-apps');
             const pinnedAppsContainer = document.getElementById('pinned-apps');
             const startBtn = document.getElementById('start-btn');
-            const startMenu = document.getElementById('start-menu');
-            const startMenuGrid = document.getElementById('start-menu-grid');
+            
+            // --- New Search Menu Elements ---
+            const searchMenu = document.getElementById('search-menu');
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
             const clock = document.getElementById('clock');
             const contextMenu = document.getElementById('context-menu');
             const modalBackdrop = document.getElementById('modal-backdrop');
@@ -562,25 +644,24 @@
             let windowCounter = 0;
             let currentCalculation = '0';
             let virtualClipboard = ''; // Our new virtual clipboard
-            let pinnedApps = new Set(['preferences', 'files']);
+            let pinnedApps = new Set(); // <-- CHANGED: Removed default pinned apps
+            
+            let searchSelectionIndex = 0; // For search keyboard navigation
 
             // --- VFS (Virtual File System) ---
             const VFS_STORAGE_KEY = 'polarisVfs';
+            // const HIDDEN_APPS_KEY = 'polarisHiddenApps'; // Removed
+            
+            // --- Removed Tile Layout Storage ---
+
             const defaultFileSystem = {
                 'type': 'directory', 'children': {
                     'home': { 'type': 'directory', 'children': {
                             'user': { 'type': 'directory', 'children': {
+                                    'Applications': { 'type': 'directory', 'children': {} }, // Added Applications dir
                                     'Documents': { 'type': 'directory', 'children': { 'report.docx': { 'type': 'file', 'content': 'This is a simulated Word document.' } } },
                                     'Downloads': { 'type': 'directory', 'children': {} },
-                                    'Applications': { 'type': 'directory', 'children': {
-                                        'Colors.app': { 'type': 'app', 'content': 'colors' },
-                                        'Images.app': { 'type': 'app', 'content': 'images' },
-                                        'Minesweeper.app': { 'type': 'app', 'content': 'minesweeper' },
-                                        'Numbers.app': { 'type': 'app', 'content': 'numbers' },
-                                        'Texts.app': { 'type': 'app', 'content': 'texts' },
-                                        'zDevUpload.app': { 'type': 'app', 'content': 'zdeupload' }
-                                    }},
-                                    'ver.txt': { 'type': 'file', 'content': 'Last updated 11-17-25\nCore OS Polaris\nWeb UI 0.22.0\n\nThis project is at extremely early-stage!' }
+                                    'ver.txt': { 'type': 'file', 'content': 'Last updated 11-17-25\nCore OS Polaris\nWeb UI 0.21.5\n\nThis project is at extremely early-stage!' }
                                 }
                             }
                         }
@@ -591,11 +672,25 @@
             
             let fileSystem; // This will be our live, mutable VFS object
 
-            // getFileSystemNode must be defined *before* initializeVFS
-            function getFileSystemNode(path) {
-                if (!fileSystem) return null; // Guard against uninitialized VFS
-                if (path === '/') return fileSystem; // Handle root
-                return path.split('/').filter(p => p).reduce((node, part) => (node && node.type === 'directory' && node.children[part]) ? node.children[part] : null, fileSystem);
+            function populateDefaultApps() {
+                const appsDir = getFileSystemNode('/home/user/Applications');
+                if (!appsDir || appsDir.type !== 'directory') {
+                    console.error("Critical: /home/user/Applications not found.");
+                    return;
+                }
+                
+                Object.keys(appConfig).forEach(appId => {
+                    // Don't create .app files for system apps
+                    if (appId === 'preferences' || appId === 'files' || appId === 'search') return; // <-- ADDED 'search'
+                    
+                    const appFileName = `${appConfig[appId].title}.app`;
+                    if (!appsDir.children[appFileName]) {
+                        appsDir.children[appFileName] = {
+                            type: 'app', // Special type
+                            content: appId // Links to the appConfig key
+                        };
+                    }
+                });
             }
 
             function saveVFSToLocalStorage() {
@@ -615,36 +710,36 @@
                         if (!fileSystem.type || !fileSystem.children) {
                            throw new Error("Invalid VFS structure.");
                         }
-
-                        // --- VFS MIGRATION START ---
-                        // Ensure /home/user/Applications exists for older saved VFS
-                        const userNode = getFileSystemNode('/home/user');
-                        if (userNode && userNode.type === 'directory' && !userNode.children['Applications']) {
-                            console.log("Migrating VFS: Adding Applications directory.");
-                            const defaultAppsDir = defaultFileSystem.children.home.children.user.children.Applications;
-                            userNode.children['Applications'] = JSON.parse(JSON.stringify(defaultAppsDir)); // Deep copy
-                            saveVFSToLocalStorage();
-                        }
-                        // --- VFS MIGRATION END ---
-
                     } catch (e) {
                         console.error("Error parsing VFS from localStorage, resetting:", e);
                         fileSystem = JSON.parse(JSON.stringify(defaultFileSystem)); // Deep copy
-                        saveVFSToLocalStorage(); // Save the reset version
                     }
                 } else {
                     fileSystem = JSON.parse(JSON.stringify(defaultFileSystem)); // Deep copy
-                    saveVFSToLocalStorage(); // Initial save
                 }
+                
+                // VFS Migration: Ensure /home/user/Applications exists
+                let homeUser = getFileSystemNode('/home/user');
+                if (homeUser && !homeUser.children['Applications']) {
+                    console.log("Migrating VFS: Adding /Applications directory.");
+                    homeUser.children['Applications'] = { type: 'directory', children: {} };
+                }
+
+                // Populate .app files
+                populateDefaultApps();
+                
+                // Save any migrations or additions
+                saveVFSToLocalStorage(); 
             }
-            // --- End VFS ---
             
-            // --- App Configuration ---
-            const systemApps = ['preferences', 'files']; // Apps that are not deletable
+            // --- Removed Hidden App functions ---
             
             const appConfig = {
+                search: { // Renamed from startMenu
+                    title: "SearchExperience", emoji: "🔍", multiInstance: false, content: null // Not a window
+                },
                 preferences: {
-                    title: "Preferences", icon: "https://placehold.co/48x48/6B7280/FFFFFF?text=P", multiInstance: false,
+                    title: "Preferences", emoji: "⚙️", multiInstance: false,
                     content: `<div class="p-8">
                         <h1 class="text-2xl font-bold mb-4">Preferences</h1>
                         <div class="flex items-center justify-between py-2">
@@ -657,20 +752,20 @@
                         <div class="flex items-center justify-between py-4 mt-4 border-t border-black/10 dark:border-white/10">
                             <div class="flex flex-col">
                                 <span>Reset File System</span>
-                                <span class="text-xs text-gray-500">Resets all files and folders to default.</span>
+                                <span class="text-xs text-gray-500">Resets files and restores all apps.</span>
                             </div>
                             <button id="reset-vfs-btn" class="px-3 py-1 text-sm btn-default">Reset</button>
                         </div>
                     </div>`, width: '500px', height: '400px'
                 },
                 texts: {
-                    title: "Texts", icon: "https://placehold.co/48x48/FBBF24/FFFFFF?text=T", multiInstance: true,
+                    title: "Texts", emoji: "📝", multiInstance: true,
                     content: `<div class="w-full h-full flex flex-col">
                         <textarea class="texts-textarea w-full h-full p-2 border-0 resize-none focus:outline-none bg-transparent font-mono text-sm"></textarea>
                     </div>`, width: '600px', height: '400px'
                 },
                 numbers: {
-                    title: "Numbers", icon: "https://placehold.co/48x48/34D399/FFFFFF?text=N", multiInstance: true,
+                    title: "Numbers", emoji: "🧮", multiInstance: true,
                     content: `<div class="flex flex-col h-full">
                         <div id="calc-display" class="calc-display text-4xl text-right p-4 flex items-end justify-end font-light">0</div>
                         <div class="calculator-grid flex-shrink-0 flex-grow">
@@ -697,13 +792,13 @@
                     </div>`, width: '320px', height: '480px'
                 },
                 files: {
-                    title: "Files", icon: "https://placehold.co/48x48/3B82F6/FFFFFF?text=F", multiInstance: true,
+                    title: "Files", emoji: "📁", multiInstance: true,
                     content: `<div class="file-explorer">
                         <div class="files-sidebar p-2">
                            <button data-path="/home/user" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Home</button>
+                           <button data-path="/home/user/Applications" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Applications</button>
                            <button data-path="/home/user/Documents" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Documents</button>
                            <button data-path="/home/user/Downloads" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Downloads</button>
-                           <button data-path="/home/user/Applications" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Applications</button>
                         </div>
                         <div class="files-main">
                             <div class="files-breadcrumbs p-2 border-b border-black/10 dark:border-white/10">/</div>
@@ -714,7 +809,7 @@
                     </div>`, width: '700px', height: '500px'
                 },
                 colors: {
-                    title: "Colors", icon: "https://placehold.co/48x48/EC4899/FFFFFF?text=C", multiInstance: true,
+                    title: "Colors", emoji: "🎨", multiInstance: true,
                     content: `<div class="colors-app">
                         <div class="colors-toolbar p-2 flex flex-col items-center gap-2">
                             <button data-color="#000000" class="color-swatch active" style="background-color: #000000;"></button>
@@ -728,12 +823,12 @@
                     </div>`, width: '600px', height: '400px'
                 },
                 images: {
-                    title: "Images", icon: "https://placehold.co/48x48/8B5CF6/FFFFFF?text=I", multiInstance: true,
+                    title: "Images", emoji: "🖼️", multiInstance: true,
                     content: `<div class="images-app"><img src="" alt="Image view"></div>`,
                     width: '600px', height: '400px'
                 },
                 zdeupload: {
-                    title: "zDevUpload", icon: "https://placehold.co/48x48/F59E0B/FFFFFF?text=U", multiInstance: false,
+                    title: "zDevUpload", emoji: "📤", multiInstance: false,
                     content: `<div class="zdeupload-app flex flex-col items-center justify-center h-full">
                         <h2 class="text-xl font-semibold mb-4">Upload a File</h2>
                         <p class="text-sm text-gray-500 mb-4">Upload .txt, .png, .jpg, or .gif files to the virtual file system.</p>
@@ -741,7 +836,7 @@
                     </div>`, width: '400px', height: '250px'
                 },
                 minesweeper: {
-                    title: "Minesweeper", icon: "https://placehold.co/48x48/10B981/FFFFFF?text=M", multiInstance: true,
+                    title: "Minesweeper", emoji: "💣", multiInstance: true,
                     content: `<div class="minesweeper-app">
                         <div class="minesweeper-info">
                             <div id="mine-count" class="minesweeper-info-box">10</div>
@@ -752,7 +847,6 @@
                     </div>`, width: '400px', height: '460px'
                 }
             };
-            // --- End App Config ---
 
             function animateClick(element) {
                 if (!element) return;
@@ -834,13 +928,171 @@
                 }
             }
             
-            // --- Start Menu ---
+            // --- New Search Menu Logic ---
             startBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 animateClick(e.currentTarget);
-                startMenu.classList.toggle('show');
+                
+                // --- VFS CHECK ---
+                // No longer check VFS for 'search', it's a system app
+                // if (!checkAppVfsStatus('search')) { ... } // Removed
+                // --- END VFS CHECK ---
+                
+                const isHidden = !searchMenu.classList.contains('show');
+                searchMenu.classList.toggle('show');
                 clockFlyout.classList.remove('show'); // Close clock flyout
+                
+                if (isHidden) {
+                    // FIX: Add a short delay to allow the animation to complete
+                    setTimeout(() => searchInput.focus(), 200); 
+                    performSearch(''); // Show initial state
+                } else {
+                    searchInput.value = ''; // Clear search on close
+                }
             });
+
+            searchInput.addEventListener('input', (e) => performSearch(e.target.value));
+            searchInput.addEventListener('keydown', handleSearchKeydown); // Added keydown listener
+            
+            function handleSearchKeydown(e) {
+                const items = searchResults.querySelectorAll('.search-result-item');
+                if (items.length === 0) return;
+
+                switch (e.key) {
+                    case 'ArrowDown':
+                    // case 'Tab': // Allow Tab to navigate down
+                        e.preventDefault();
+                        searchSelectionIndex = (searchSelectionIndex + 1) % items.length;
+                        updateSearchSelection(items);
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        searchSelectionIndex = (searchSelectionIndex - 1 + items.length) % items.length;
+                        updateSearchSelection(items);
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        const selectedItem = items[searchSelectionIndex];
+                        if (selectedItem) {
+                            selectedItem.click(); // Trigger the click handler
+                        }
+                        break;
+                }
+            }
+
+            function updateSearchSelection(items) {
+                items.forEach((item, index) => {
+                    if (index === searchSelectionIndex) {
+                        item.classList.add('selected');
+                        // Scroll item into view
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                });
+            }
+            
+            function performSearch(query) {
+                searchResults.innerHTML = '';
+                searchSelectionIndex = 0; // Reset selection index
+                const lowerQuery = query.toLowerCase();
+                let resultCount = 0;
+
+                // Search Apps
+                Object.keys(appConfig).forEach(appId => {
+                    // if (appId === 'search') return; // No longer needed, search doesn't show itself
+                    
+                    const config = appConfig[appId];
+                    if (config.title.toLowerCase().includes(lowerQuery)) {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <span class="search-result-icon">${config.emoji}</span>
+                            <div class="search-result-details">
+                                <span class="search-result-title">${config.title}</span>
+                                <span class="search-result-path">Application</span>
+                            </div>
+                        `;
+                        item.onclick = () => {
+                            createWindow(appId);
+                            searchMenu.classList.remove('show');
+                            searchInput.value = '';
+                        };
+                        searchResults.appendChild(item);
+                        resultCount++;
+                    }
+                });
+
+                // Search Files
+                function searchVFS(node, path) {
+                    if (!node || !node.children) return;
+
+                    Object.keys(node.children).forEach(name => {
+                        const childNode = node.children[name];
+                        const fullPath = `${path === '/' ? '' : path}/${name}`;
+
+                        if (name.toLowerCase().includes(lowerQuery) && childNode.type !== 'app') {
+                            let icon = '📄';
+                            if (childNode.type === 'directory') icon = '📁';
+                            else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) icon = '🖼️';
+
+                            const item = document.createElement('div');
+                            item.className = 'search-result-item';
+                            item.innerHTML = `
+                                <span class="search-result-icon">${icon}</span>
+                                <div class="search-result-details">
+                                    <span class="search-result-title">${name}</span>
+                                    <span class="search-result-path">${path}</span>
+                                </div>
+                            `;
+                            
+                            item.onclick = () => {
+                                if (childNode.type === 'directory') {
+                                    const filesWin = createWindow('files');
+                                    // Wait a moment for window to be created, then render path
+                                    setTimeout(() => renderFileSystem(filesWin, fullPath), 50);
+                                } else if (name.endsWith('.txt') || name.endsWith('.conf')) {
+                                    openFileInTexts(fullPath);
+                                } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
+                                    openImageInViewer(fullPath);
+                                } else {
+                                    // --- NEW UNKNOWN FILE HANDLER ---
+                                    showModal('Open with...', `How do you want to open "${name}"?`, [
+                                        { label: 'Cancel' },
+                                        { label: 'Images', class: 'btn-accent', action: () => openImageInViewer(fullPath) },
+                                        { label: 'Texts', class: 'btn-accent', action: () => openFileInTexts(fullPath) }
+                                    ]);
+                                }
+                                searchMenu.classList.remove('show');
+                                searchInput.value = '';
+                            };
+                            searchResults.appendChild(item);
+                            resultCount++;
+                        }
+
+                        if (childNode.type === 'directory') {
+                            searchVFS(childNode, fullPath);
+                        }
+                    });
+                }
+                
+                if (lowerQuery.length > 0) { // Only search VFS if there's a query
+                    searchVFS(getFileSystemNode('/'), '/');
+                }
+
+                if (resultCount === 0 && lowerQuery.length > 0) {
+                    searchResults.innerHTML = `<div class="p-4 text-center text-gray-500">No results found for "${query}"</div>`;
+                } else if (resultCount === 0 && lowerQuery.length === 0) {
+                    searchResults.innerHTML = `<div class="p-4 text-center text-gray-500">Type to search for apps and files.</div>`;
+                }
+                
+                // Auto-select the first item
+                const items = searchResults.querySelectorAll('.search-result-item');
+                if (items.length > 0) {
+                    items[0].classList.add('selected');
+                }
+            }
+
 
             // --- Clock Flyout ---
             clockContainer.addEventListener('click', (e) => {
@@ -855,15 +1107,32 @@
                 }
                 
                 clockFlyout.classList.toggle('show');
-                startMenu.classList.remove('show'); // Close start menu
+                searchMenu.classList.remove('show'); // Close search menu
+                searchInput.value = '';
             });
             
             // --- Global Click Handler & Dark Mode Toggle ---
-            document.body.addEventListener('click', (e) => {
-                if (!startMenu.contains(e.target) && !startBtn.contains(e.target)) {
-                    startMenu.classList.remove('show');
+            function handleGlobalKeydown(e) {
+                // Don't trigger if typing in an input or search is already open
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                const isSearchOpen = searchMenu.classList.contains('show');
+                const isModalOpen = modalBackdrop.classList.contains('show');
+
+                if (e.key === ' ' && !isSearchOpen && !isModalOpen) {
+                    const hasOpenWindows = Object.values(openWindows).some(w => !w.minimized);
+                    if (!hasOpenWindows) {
+                        e.preventDefault(); // Prevent space from scrolling
+                        startBtn.click(); // Open search
+                    }
                 }
-                // Add this block
+            }
+            
+            document.body.addEventListener('click', (e) => {
+                if (!searchMenu.contains(e.target) && !startBtn.contains(e.target)) {
+                    searchMenu.classList.remove('show');
+                    searchInput.value = '';
+                }
                 if (!clockFlyout.contains(e.target) && !clockContainer.contains(e.target)) {
                     clockFlyout.classList.remove('show');
                 }
@@ -881,6 +1150,8 @@
                     }
                 }
             });
+            
+            document.body.addEventListener('keydown', handleGlobalKeydown); // Add global key listener
 
             function toggleDarkMode(forceState) {
                 const isDarkMode = typeof forceState === 'boolean' ? forceState : document.body.classList.toggle('dark');
@@ -910,21 +1181,15 @@
             });
 
             function getContextMenuItems(target) {
-                const startMenuApp = target.closest('#start-menu .app-launcher');
-                if (startMenuApp) {
-                    const appId = startMenuApp.dataset.appId;
-                    return [
-                        { label: 'Open', action: () => createWindow(appId) },
-                        { label: 'Pin to taskbar', action: () => pinApp(appId), disabled: pinnedApps.has(appId) }
-                    ];
-                }
+                // Removed Start Menu context logic
                 
                 const pinnedApp = target.closest('#pinned-apps .app-launcher');
                 if (pinnedApp) {
                     const appId = pinnedApp.dataset.appId;
+                    const config = appConfig[appId];
                     return [
                         { label: 'Open', action: () => createWindow(appId) },
-                        { label: 'Unpin from taskbar', action: () => unPinApp(appId) } // Fixed typo: unpinApp
+                        { label: `Unpin ${config.title} from taskbar`, action: () => unPinApp(appId) }
                     ];
                 }
                 
@@ -965,7 +1230,6 @@
                         { label: 'Save', action: () => saveNotepadFile(windowTarget) },
                         { type: 'separator' },
                         
-                        // START REPLACEMENT for Cut
                         { 
                             label: 'Cut', 
                             action: () => {
@@ -985,9 +1249,6 @@
                                 textarea.focus();
                             }
                         },
-                        // END REPLACEMENT for Cut
-                        
-                        // START REPLACEMENT for Copy
                         { 
                             label: 'Copy', 
                             action: () => {
@@ -1002,9 +1263,6 @@
                                 textarea.focus();
                             }
                         },
-                        // END REPLACEMENT for Copy
-                        
-                        // START REPLACEMENT for Paste
                         { 
                             label: 'Paste', 
                             disabled: virtualClipboard === '', // Disable if clipboard is empty
@@ -1023,15 +1281,12 @@
                                 textarea.focus(); // Re-focus the textarea
                             }
                         }
-                       // END REPLACEMENT for Paste
                        ];
                 }
 
-                // *** START MODIFICATION: Files App Context Menu ***
                 const fileItem = target.closest('.files-grid button');
                 const filesWindow = target.closest('.window[data-app-id="files"]');
 
-                // Case 1: Right-clicked a specific File or Folder
                 if (fileItem && filesWindow) {
                     const filename = fileItem.dataset.filename;
                     const fileType = fileItem.dataset.type;
@@ -1044,7 +1299,6 @@
                     ];
                 }
 
-                // Case 2: Right-clicked the empty background of Files App
                 if (filesWindow && target.closest('.files-grid-container')) {
                     return [
                         { label: 'New Folder', action: () => createNewItem(filesWindow, 'directory') },
@@ -1056,20 +1310,13 @@
                         }}
                     ];
                 }
-                // *** END MODIFICATION ***
                 
-                // Desktop
-                // Check if the click target is the desktop itself.
-                // The `target.id === 'desktop'` check ensures it's the desktop.
                 if (target.id === 'desktop') {
                     return [
                         { label: 'Reboot', action: () => location.reload() },
                         { label: 'Personalize', action: () => createWindow('preferences') }
                     ];
                 }
-
-                // If it's not the desktop or any other recognized element,
-                // return an empty array to show no menu.
                 return [];
             }
 
@@ -1151,8 +1398,15 @@
                            return;
                         }
                         
-                        hideModal();
-                        if(btn.action) btn.action();
+                        // Don't hide modal if the action returns false
+                        let result;
+                        if(btn.action) {
+                           result = btn.action();
+                        }
+                        
+                        if (result !== false) {
+                            hideModal();
+                        }
                     };
                     buttonsEl.appendChild(button);
                 });
@@ -1204,35 +1458,42 @@
             }
 
             // --- Files & Texts Logic ---
-            // getFileSystemNode() is now defined at the top with VFS logic
+            function getFileSystemNode(path) {
+                if (!fileSystem) return null; // Guard against uninitialized VFS
+                if (path === '/') return fileSystem; // Handle root
+                return path.split('/').filter(p => p).reduce((node, part) => (node && node.type === 'directory' && node.children[part]) ? node.children[part] : null, fileSystem);
+            }
 
-            // *** START REPLACEMENT: renderFileSystem ***
             function renderFileSystem(win, path) {
                 const node = getFileSystemNode(path);
                 const grid = win.querySelector('.files-grid');
                 const breadcrumbs = win.querySelector('.files-breadcrumbs');
                 
-                // Store current path on the window for context menu access
                 win.dataset.currentPath = path;
 
                 if (!node || node.type !== 'directory' || !grid || !breadcrumbs) return;
 
                 grid.innerHTML = '';
                 Object.entries(node.children).forEach(([name, childNode]) => {
+                    // --- HIDE SearchExperience.app ---
+                    if (name === 'SearchExperience.app') return;
+
                     const item = document.createElement('button');
-                    // ADDED: data-filename and data-type for context menu identification
                     item.dataset.filename = name;
                     item.dataset.type = childNode.type;
                     
                     item.className = 'flex flex-col items-center p-2 hover:bg-black/10 dark:hover:bg-white/10 text-center rounded relative'; // Added rounded/relative
                     
-                    // --- START MODIFICATION ---
-                    // Check for file type to assign correct icon
-                    const isDirectory = childNode.type === 'directory';
-                    const isApp = childNode.type === 'app';
-                    const isImage = !isDirectory && !isApp && ['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext));
-                    const icon = isDirectory ? '📁' : (isApp ? '🚀' : (isImage ? '🖼️' : '📄'));
-                    // --- END MODIFICATION ---
+                    let icon = '📄'; // Default file
+                    if (childNode.type === 'directory') {
+                        icon = '📁';
+                    } else if (childNode.type === 'app') {
+                        // --- DYNAMIC APP ICONS ---
+                        const appId = childNode.content;
+                        icon = appConfig[appId] ? appConfig[appId].emoji : '🚀';
+                    } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
+                        icon = '🖼️';
+                    }
 
                     item.innerHTML = `<div class="text-4xl pointer-events-none">${icon}</div><span class="text-xs mt-1 truncate w-full pointer-events-none">${name}</span>`;
                     
@@ -1242,11 +1503,21 @@
                     if (childNode.type === 'directory') {
                         item.onclick = () => renderFileSystem(win, fullPath);
                     } else if (childNode.type === 'app') {
-                        item.onclick = () => createWindow(childNode.content); // Use content as appId
+                        item.onclick = () => createWindow(childNode.content);
                     } else if (name.endsWith('.txt') || name.endsWith('.conf')) {
                         item.onclick = () => openFileInTexts(fullPath);
                     } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
                         item.onclick = () => openImageInViewer(fullPath);
+                    } else {
+                        // --- NEW UNKNOWN FILE HANDLER ---
+                        item.onclick = () => {
+                            showModal('Open with...', `How do you want to open "${name}"?`, [
+                                { label: 'Cancel' },
+                                { label: 'Images', class: 'btn-accent', action: () => openImageInViewer(fullPath) },
+                                { label: 'Texts', class: 'btn-accent', action: () => openFileInTexts(fullPath) }
+                            ]);
+                        };
+                        // --- END UNKNOWN FILE HANDLER ---
                     }
                     grid.appendChild(item);
                 });
@@ -1271,11 +1542,21 @@
                     breadcrumbs.appendChild(partCrumb);
                 });
             }
-            // *** END REPLACEMENT ***
             
             function openFileInTexts(path) {
                 const fileNode = getFileSystemNode(path);
                 if (!fileNode || fileNode.type !== 'file') return;
+                
+                // Check if 'texts' app is "installed"
+                if (!checkAppVfsStatus('texts')) {
+                     showModal(
+                        'Application not found', 
+                        `Cannot open "${path.split('/').pop()}" because the "Texts" application is not found.`, 
+                        [{label: 'OK'}]
+                    );
+                    return;
+                }
+                
                 const win = createWindow('texts');
                 if(!win) return; 
 
@@ -1283,17 +1564,28 @@
                 textarea.value = fileNode.content;
                 win.dataset.filePath = path;
                 win.dataset.originalContent = fileNode.content;
-                win.querySelector('.title-bar span').textContent = `${path.split('/').pop()} - Texts`;
+                win.querySelector('.title-bar .window-title').textContent = `${path.split('/').pop()} - Texts`;
             }
             
             function openImageInViewer(path) {
                 const fileNode = getFileSystemNode(path);
-                if (!fileNode || fileNode.type !== 'file' || typeof fileNode.content !== 'string' || !fileNode.content.startsWith('data:image')) return;
+                if (!fileNode || fileNode.type !== 'file') return;
+                
+                // Check if 'images' app is "installed"
+                if (!checkAppVfsStatus('images')) {
+                     showModal(
+                        'Application not found', 
+                        `Cannot open "${path.split('/').pop()}" because the "Images" application is not found.`, 
+                        [{label: 'OK'}]
+                    );
+                    return;
+                }
+                
                 const win = createWindow('images');
                 if(!win) return; 
-                // FIXED: Select the img tag inside the content-area, not the title bar icon
+                // MODIFIED: Removed content check to allow force-parsing
                 win.querySelector('.content-area img').src = fileNode.content; 
-                win.querySelector('.title-bar span').textContent = `${path.split('/').pop()} - Images`;
+                win.querySelector('.title-bar .window-title').textContent = `${path.split('/').pop()} - Images`;
             }
 
             window.saveNotepadFile = (notepadWindow) => {
@@ -1324,40 +1616,54 @@
                         { label: 'Save', class: 'btn-accent', action: () => {
                             let fileName = input.value.trim() || 'Untitled.txt';
                             if (!fileName.endsWith('.txt')) fileName += '.txt';
-                            const homeNode = getFileSystemNode('/home/user/Documents'); // Save in Documents
+                            const homeNode = getFileSystemNode('/home/user/Documents'); // Save to Documents
                             homeNode.children[fileName] = { type: 'file', content: newContent };
                             const newPath = `/home/user/Documents/${fileName}`;
                             win.dataset.filePath = newPath;
                             win.dataset.originalContent = newContent;
-                            win.querySelector('.title-bar span').textContent = `${fileName} - Texts`;
+                            win.querySelector('.title-bar .window-title').textContent = `${fileName} - Texts`;
                             saveVFSToLocalStorage(); // <-- Persist VFS
                         }}
                     ]);
                 }
             }
+            
+            // --- New helper function to check VFS for app ---
+            function checkAppVfsStatus(appId) {
+                // --- MODIFIED: 'search' is now a system app ---
+                if (appId === 'preferences' || appId === 'files' || appId === 'search') return true; 
+                
+                const appName = appConfig[appId].title;
+                const appFileName = `${appName}.app`;
+                const appNode = getFileSystemNode(`/home/user/Applications/${appFileName}`);
+                
+                return appNode && appNode.type === 'app' && appNode.content === appId;
+            }
 
             // --- Window Management ---
             function createWindow(appId) {
-                if (!appConfig[appId]) {
-                    console.error(`App config not found for: ${appId}`);
+                if (!appConfig[appId]) return null;
+                
+                // --- SPECIAL CASE FOR SEARCH ---
+                if (appId === 'search') {
+                    // No VFS check needed here anymore
+                    searchMenu.classList.add('show');
+                    setTimeout(() => searchInput.focus(), 200);
+                    performSearch('');
+                    clockFlyout.classList.remove('show');
+                    return null; // Not a window, so return null
+                }
+                // --- END SPECIAL CASE ---
+                
+                // --- VFS App Check ---
+                const isInstalled = checkAppVfsStatus(appId);
+                if (!isInstalled) {
+                    const appName = appConfig[appId].title;
+                    const buttons = [ { label: 'OK' } ]; // Removed "Remove from Start"
+                    showModal('Application not found', `The application "${appName}" (${appName}.app) could not be found in /home/user/Applications.`, buttons);
                     return null;
                 }
-
-                // --- START OF NEW CHECK ---
-                // Check if the app is "installed" in the VFS
-                if (!systemApps.includes(appId)) {
-                    const vfsAppIds = getVFSApps().map(app => app.appId);
-                    if (!vfsAppIds.includes(appId)) {
-                        const config = appConfig[appId];
-                        const appFileName = `${config.title}.app`;
-                        showModal("Application not found", 
-                            `Cannot open ${config.title}. The file "${appFileName}" was not found in /home/user/Applications.`,
-                            [{ label: 'OK' }]
-                        );
-                        return null; // Stop execution
-                    }
-                }
-                // --- END OF NEW CHECK ---
+                // --- End VFS App Check ---
 
                 const config = appConfig[appId];
 
@@ -1384,7 +1690,10 @@
                 
                 win.innerHTML = `
                     <div class="title-bar flex justify-between items-center pl-3">
-                        <div class="flex items-center gap-2"><img src="${config.icon.replace('48x48', '16x16')}" class="w-4 h-4" alt="${config.title} icon"><span class="text-sm font-medium">${config.title}</span></div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">${config.emoji}</span>
+                            <span class="window-title text-sm font-medium">${config.title}</span>
+                        </div>
                         <div class="title-bar-controls flex items-center">
                             <button class="minimize-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"></line></svg></button>
                             <button class="maximize-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg></button>
@@ -1397,7 +1706,7 @@
                 taskbarIcon.className = 'taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors relative';
                 taskbarIcon.dataset.appId = appId;
                 taskbarIcon.dataset.instanceId = instanceId;
-                taskbarIcon.innerHTML = `<img src="${config.icon.replace('48x48', '24x24')}" alt="${config.title} Icon" class="w-6 h-6" style="width:24px; height:24px;">`;
+                taskbarIcon.innerHTML = `<span class="text-xl leading-6">${config.emoji}</span>`;
                 taskbarIcon.onclick = (e) => { 
                     animateClick(e.currentTarget);
                     const winData = openWindows[instanceId];
@@ -1415,25 +1724,26 @@
                     const checkbox = win.querySelector('#dark-mode-checkbox');
                     if (checkbox) checkbox.checked = document.body.classList.contains('dark');
                     
-                    // VFS Reset Button Logic
                     const resetBtn = win.querySelector('#reset-vfs-btn');
                     if (resetBtn) {
                         resetBtn.onclick = () => {
                             showModal('Reset File System?', 
-                                'All your files and folders will be deleted and reset to the original state. This cannot be undone.',
+                                'All files and folders will be reset. This will restore any missing apps.',
                                 [
                                     { label: 'Cancel' },
                                     { label: 'Reset', class: 'btn-danger', action: () => {
                                         fileSystem = JSON.parse(JSON.stringify(defaultFileSystem));
+                                        populateDefaultApps(); // Re-populate .app files
                                         saveVFSToLocalStorage();
+                                        
+                                        // Removed hidden apps & tile layout reset
+                                        
                                         // Refresh any open 'Files' windows
                                         Object.values(openWindows).forEach(w => {
                                             if (w.appId === 'files') {
                                                 renderFileSystem(w.element, w.element.dataset.currentPath || '/');
                                             }
                                         });
-                                        // Refresh the start menu
-                                        renderStartMenu();
                                     }}
                                 ]
                             );
@@ -1504,11 +1814,9 @@
                 doClose();
             }
 
-            // --- FIXED: Window Interactions ---
             function setupWindowInteractions(win) {
                 const titleBar = win.querySelector('.title-bar');
                 
-                // Dragging
                 titleBar.addEventListener('mousedown', (e) => {
                     if (e.target.closest('button') || win.classList.contains('maximized')) return;
                     
@@ -1543,7 +1851,6 @@
                     document.addEventListener('mouseup', onMouseUp);
                 });
 
-                // Window Controls
                 win.querySelector('.close-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeWindow(win);
@@ -1556,21 +1863,13 @@
 
                 win.querySelector('.maximize-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
-
-                    // --- START MODIFICATION ---
-                    // Add the transitioning class to enable animations
                     win.classList.add('transitioning');
                     
-                    // REPLACED: The 'transitionend' listener was unreliable.
-                    // Using setTimeout is safer because we know the animation
-                    // duration from our CSS is 250ms (0.25s).
                     setTimeout(() => {
                         win.classList.remove('transitioning');
-                    }, 250); // Match CSS transition time
-                    // --- END MODIFICATION ---
+                    }, 250);
 
                     if (win.classList.contains('maximized')) {
-                        // Restore
                         win.classList.remove('maximized');
                         win.style.width = win.dataset.originalWidth;
                         win.style.height = win.dataset.originalHeight;
@@ -1578,9 +1877,8 @@
                         win.style.top = win.dataset.originalTop;
                         win.style.resize = 'both';
                     } else {
-                        // Maximize
                         win.dataset.originalWidth = win.style.width;
-                        win.dataset.originalHeight = win.style.height;
+                        win.style.height = win.style.height;
                         win.dataset.originalLeft = win.style.left;
                         win.dataset.originalTop = win.style.top;
                         win.classList.add('maximized');
@@ -1588,7 +1886,6 @@
                     }
                 });
                 
-                // Focus
                 win.addEventListener('mousedown', () => focusWindow(win), true);
             }
             
@@ -1622,7 +1919,7 @@
                     renderPinnedApps();
                 }
             }
-            function unPinApp(appId) { // Fixed typo: unpinApp
+            function unPinApp(appId) {
                 if (pinnedApps.has(appId)) {
                     pinnedApps.delete(appId);
                     renderPinnedApps();
@@ -1641,7 +1938,7 @@
                     const btn = document.createElement('button');
                     btn.className = 'app-launcher taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors';
                     btn.dataset.appId = appId;
-                    btn.innerHTML = `<img src="${config.icon.replace('48x48', '24x24')}" alt="${config.title} Icon">`;
+                    btn.innerHTML = `<span class="text-xl leading-6">${config.emoji}</span>`;
                     btn.onclick = (e) => { 
                         animateClick(e.currentTarget);
                         setTimeout(() => createWindow(appId), 100);
@@ -1650,65 +1947,26 @@
                 });
             }
             
-            // --- New helper function to get VFS apps ---
-            function getVFSApps() {
-                const appsNode = getFileSystemNode('/home/user/Applications');
-                if (!appsNode || appsNode.type !== 'directory') {
-                    return []; // No apps directory found
-                }
-                
-                return Object.entries(appsNode.children)
-                    .filter(([name, node]) => node.type === 'app' && appConfig[node.content])
-                    .map(([name, node]) => ({
-                        appId: node.content,
-                        title: appConfig[node.content].title
-                    }));
-            }
+            // --- renderStartMenu is removed ---
             
-            function renderStartMenu() {
-                // Find the container, or clear it if it exists
-                let appsContainer = startMenuGrid.querySelector('.app-icon-container');
-                if (appsContainer) {
-                    appsContainer.innerHTML = ''; // Clear existing icons
-                } else {
-                    appsContainer = document.createElement('div');
-                    appsContainer.className = 'app-icon-container col-span-6 grid grid-cols-6 gap-y-6';
-                    startMenuGrid.appendChild(appsContainer);
+            // --- New helper function to find all app IDs in a VFS node (recursive) ---
+            function findAppIdsRecursive(node) {
+                let ids = [];
+                if (!node) return ids; // Safety check
+
+                if (node.type === 'app') {
+                    // Check if it's a valid app ID
+                    if (appConfig[node.content]) {
+                        ids.push(node.content);
+                    }
+                } else if (node.type === 'directory' && node.children) {
+                    Object.values(node.children).forEach(child => {
+                        ids = ids.concat(findAppIdsRecursive(child));
+                    });
                 }
-
-                // 1. Get all apps from appConfig
-                const allApps = Object.keys(appConfig).map(appId => ({
-                    appId,
-                    title: appConfig[appId].title
-                }));
-                
-                // 2. Sort
-                allApps.sort((a, b) => {
-                    const titleA = a.title.toLowerCase();
-                    const titleB = b.title.toLowerCase();
-                    if (titleA < titleB) return -1;
-                    if (titleA > titleB) return 1;
-                    return 0;
-                });
-
-                // 3. Render
-                allApps.forEach(app => {
-                    const config = appConfig[app.appId];
-                    const btn = document.createElement('button');
-                    btn.className = 'app-launcher flex flex-col items-center justify-center p-2 hover:bg-white/20 transition-colors';
-                    btn.dataset.appId = app.appId;
-                    btn.innerHTML = `<img src="${config.icon}" class="w-12 h-12" alt="${config.title} Icon"><span class="text-xs mt-2">${config.title}</span>`;
-                    btn.onclick = (e) => { 
-                        animateClick(e.currentTarget);
-                        setTimeout(() => {
-                            createWindow(app.appId);
-                            startMenu.classList.remove('show');
-                        }, 100);
-                    };
-                    appsContainer.appendChild(btn);
-                });
+                return ids;
             }
-            
+
             // App initializers
             function initColorsApp(win) {
                 const canvas = win.querySelector('.colors-canvas');
@@ -1777,14 +2035,14 @@
                     if (file.type.startsWith('image/')) {
                         reader.onload = (event) => {
                             downloadsNode.children[file.name] = { type: 'file', content: event.target.result };
-                            saveVFSToLocalStorage(); // <-- Persist VFS
+                            saveVFSToLocalStorage();
                             openImageInViewer(`/home/user/Downloads/${file.name}`);
                         };
                         reader.readAsDataURL(file);
                     } else if (file.type === 'text/plain') {
                         reader.onload = (event) => {
                             downloadsNode.children[file.name] = { type: 'file', content: event.target.result };
-                            saveVFSToLocalStorage(); // <-- Persist VFS
+                            saveVFSToLocalStorage();
                             openFileInTexts(`/home/user/Downloads/${file.name}`);
                         };
                         reader.readAsText(file);
@@ -1795,7 +2053,6 @@
                 });
             }
 
-            // --- Minesweeper App ---
             function initMinesweeperApp(win) {
                 const GRID_SIZE = 9;
                 const NUM_MINES = 10;
@@ -1846,7 +2103,6 @@
                         const r = Math.floor(Math.random() * GRID_SIZE);
                         const c = Math.floor(Math.random() * GRID_SIZE);
 
-                        // Don't plant on first click or if already a mine
                         if ((r === firstRow && c === firstCol) || board[r][c].isMine) {
                             continue;
                         }
@@ -1856,7 +2112,6 @@
                         minesToPlant--;
                     }
 
-                    // Calculate adjacent mines
                     for (let r = 0; r < GRID_SIZE; r++) {
                         for (let c = 0; c < GRID_SIZE; c++) {
                             if (board[r][c].isMine) continue;
@@ -1964,7 +2219,6 @@
                         cellEl.textContent = cellData.adjacentMines;
                         cellEl.dataset.adjacent = cellData.adjacentMines;
                     } else {
-                        // Flood fill for empty cells
                         for (let rOffset = -1; rOffset <= 1; rOffset++) {
                             for (let cOffset = -1; cOffset <= 1; cOffset++) {
                                 if (rOffset === 0 && cOffset === 0) continue;
@@ -1979,7 +2233,6 @@
                     stopTimer();
                     resetBtn.textContent = isWin ? '😎' : '😵';
 
-                    // Reveal all mines
                     mineLocations.forEach(({r, c}) => {
                         const cellEl = grid.children[r * GRID_SIZE + c];
                         if (!board[r][c].isRevealed && !isWin) {
@@ -1987,7 +2240,7 @@
                             cellEl.textContent = '💣';
                         }
                         if (board[r][c].isFlagged && !board[r][c].isMine) {
-                             cellEl.style.backgroundColor = 'yellow'; // Mis-flagged
+                             cellEl.style.backgroundColor = 'yellow';
                         }
                     });
                 }
@@ -2018,7 +2271,6 @@
                     createBoard();
                 }
                 
-                // --- Init ---
                 createBoard();
                 mineCountDisplay.textContent = NUM_MINES;
                 timerDisplay.textContent = 0;
@@ -2033,37 +2285,37 @@
                 const currentPath = win.dataset.currentPath;
                 const parentNode = getFileSystemNode(currentPath);
                 
+                // --- Prevent Deletion of SearchExperience.app ---
+                // (No longer needed, it's not in the VFS)
+                // if (filename === 'SearchExperience.app') { ... }
+                
                 if (parentNode && parentNode.children[filename]) {
-                    
                     showModal('Delete Item', `Are you sure you want to delete "${filename}"?`, [
                         { label: 'Cancel' },
                         { label: 'Delete', class: 'btn-danger', action: () => {
+                            const itemToDelete = parentNode.children[filename];
                             
-                            const fileNode = parentNode.children[filename];
-                            // Check if we are deleting an app from the Applications directory
-                            const isApp = currentPath === '/home/user/Applications' && fileNode.type === 'app';
-                            const appIdToDelete = isApp ? fileNode.content : null;
+                            // --- App Deletion Logic ---
+                            const appIdsToClose = findAppIdsRecursive(itemToDelete);
                             
+                            // --- NEW START MENU CLOSE LOGIC ---
+                            // (No longer needed, 'search' isn't in VFS)
+                            // if (appIdsToClose.includes('search')) { ... }
+                            // --- END NEW LOGIC ---
 
-                            // Delete the file
-                            delete parentNode.children[filename];
-                            saveVFSToLocalStorage(); // <-- Persist VFS
-                            renderFileSystem(win, currentPath); // Refresh Files window
-
-                            
-                            if (isApp && appIdToDelete) {
-                                console.log(`App ${appIdToDelete} deleted. Closing instances.`);
-                                // Re-render the start menu
-                                // renderStartMenu(); // No longer needed, start menu is static
-                                
-                                // Close all running instances of this app
+                            if (appIdsToClose.length > 0) {
+                                console.log("Closing instances for deleted apps:", appIdsToClose);
                                 Object.values(openWindows).forEach(w => {
-                                    if (w.appId === appIdToDelete) {
+                                    if (appIdsToClose.includes(w.appId)) {
                                         closeWindow(w.element, true); // Force close
                                     }
                                 });
                             }
-                            
+                            // --- End App Deletion Logic ---
+
+                            delete parentNode.children[filename];
+                            saveVFSToLocalStorage();
+                            renderFileSystem(win, currentPath);
                         }}
                     ]);
                 }
@@ -2074,6 +2326,10 @@
                 const parentNode = getFileSystemNode(currentPath);
                 
                 if (!parentNode) return;
+                
+                // --- Prevent Renaming of SearchExperience.app ---
+                // (No longer needed)
+                // if (oldName === 'SearchExperience.app') { ... }
 
                 const input = document.createElement('input');
                 input.type = 'text';
@@ -2084,18 +2340,17 @@
                     { label: 'Cancel' },
                     { label: 'Rename', class: 'btn-accent', action: () => {
                         const newName = input.value.trim();
-                        if (!newName) return;
-                        if (parentNode.children[newName] && newName !== oldName) {
+                        if (!newName || newName === oldName) return;
+                        
+                        if (parentNode.children[newName]) {
                             showModal('Error', 'An item with that name already exists.', [{label: 'OK'}]);
-                            return;
+                            return false; // Don't close modal
                         }
                         
-                        // Copy data to new key and delete old key
                         parentNode.children[newName] = parentNode.children[oldName];
-                        if (newName !== oldName) {
-                           delete parentNode.children[oldName];
-                        }
-                        saveVFSToLocalStorage(); // <-- Persist VFS
+                        delete parentNode.children[oldName];
+                        
+                        saveVFSToLocalStorage();
                         renderFileSystem(win, currentPath);
                     }}
                 ]);
@@ -2112,9 +2367,7 @@
                 input.value = defaultName;
                 input.className = 'w-full p-2 border bg-transparent';
                 
-                // Auto-select "New Folder" text
                 setTimeout(() => input.select(), 50);
-
 
                 showModal(type === 'directory' ? 'Create Folder' : 'Create File', input, [
                     { label: 'Cancel' },
@@ -2126,18 +2379,17 @@
                         
                         if (parentNode.children[newName]) {
                             showModal('Error', 'An item with that name already exists.', [{label: 'OK'}]);
-                            return;
+                            return false; // Don't close modal
                         }
 
                         if (type === 'directory') {
                             parentNode.children[newName] = { type: 'directory', children: {} };
                         } else {
-                            // Ensure .txt extension for text files if missing
                             let finalName = newName;
                             if (!finalName.includes('.')) finalName += '.txt';
                             parentNode.children[finalName] = { type: 'file', content: '' };
                         }
-                        saveVFSToLocalStorage(); // <-- Persist VFS
+                        saveVFSToLocalStorage();
                         renderFileSystem(win, currentPath);
                     }}
                 ]);
@@ -2145,10 +2397,12 @@
 
             // --- Initial Render ---
             applyInitialTheme();
-            initializeVFS(); // <-- Load VFS from localStorage
+            initializeVFS();
+            // loadHiddenApps(); // Removed
+            // loadTileConfig(); // Removed
             renderPinnedApps();
-            renderStartMenu(); // <-- Now reads from VFS
-            createWindow('preferences');
+            // renderStartMenu(); // Removed
+            // createWindow('preferences'); // Not auto-opening preferences anymore
         });
     </script>
 
