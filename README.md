@@ -1,2424 +1,1503 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>webshell.app</title>
+    <title>FreshKeep - Intelligent Food Tracker</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Noto Sans TC"', 'sans-serif'],
+                        display: ['"Outfit"', '"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        nature: {
+                            50: '#f2fcf5',
+                            100: '#e1f8e8',
+                            200: '#c3eed0',
+                            300: '#94e0ad',
+                            400: '#5cc984',
+                            500: '#35ae65',
+                            600: '#258c4e',
+                            700: '#216f40',
+                            800: '#1f5836',
+                            900: '#1a492e',
+                        },
+                        warning: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                        },
+                        danger: {
+                            400: '#f87171',
+                            500: '#ef4444',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'slide-in-right': 'slideInRight 0.3s ease-out forwards',
+                        'bounce-slight': 'bounceSlight 2s infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(20px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        bounceSlight: {
+                            '0%, 100%': { transform: 'translateY(-3%)' },
+                            '50%': { transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        @font-face {
-            font-family: 'Product Sans';
-            /* Base64 encoded font data from ProductSans-Regular.woff */
-            src: url('data:application/font-woff;base64,d09GRgABAAAAAEgYAAoAAAAAigAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABDRkYgAAAAAAGgAAABCAAAA4IZ2ZlZgAAAAgAAAD0AAAAUjhoZXJvAAAAAwAAAUgAAAAICfhdGhtdgAAAAQAAAFQAAAAFGhtdHMAAAAEAAABbAAAACRsb2NhAAAAAwAAAXQAAAAGbGjYQAAAAgAAAF8AAAACm1heHAAAAAEAAABjAAAACBuYW1lAAAAIAAAAZQAAAIgcG9zdAAAAAMAAAH4AAAAIHNvZnQAAAEAAAIQAAAACgABAAIAAAAAAAAAAAAAAAAAAQAABgB/BQADAAAAAAP/A+gAAAAAA/8D6AAAAAAAAAABAAEAAAAFAAMAAQAEAAAABAAEAAEAAAAFAAMAAQAEAAAAAQAAAAEAAAAAAQAEAAEAAAAAAQAABAAAAAEAADgAIAEAAgEBAAIBAgIBAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/9k=') format('woff');
-            font-weight: normal;
-            font-style: normal;
-        }
-
+        /* Custom Styles for Harmonic UI */
         :root {
-            --taskbar-height: 48px;
-            /* --start-menu-width: 500px; */ /* Removed */
-            /* --start-menu-height: 600px; */ /* Removed */
-
-            /* Light Theme */
-            --text-color: #1f1f1f;
-            --text-color-light: #6b7280;
-            --window-bg: rgba(242, 242, 242, 0.75);
-            --taskbar-bg: rgba(242, 242, 242, 0.6);
-            --start-menu-bg: rgba(225, 225, 225, 0.7); /* Keeping this var name for the search bg */
-            --hover-bg: rgba(0, 0, 0, 0.08);
-            --close-hover-bg: #e81123;
-            --close-hover-text: white;
-            --separator-bg: rgba(0,0,0,0.1);
-            --accent-color: #0078d4;
-            --accent-color-hover: #005a9e;
-
-            --calc-btn-bg: rgba(255,255,255,0.2);
-            --calc-btn-hover-bg: rgba(255,255,255,0.4);
-            --calc-operator-bg: rgba(0,0,0,0.1);
-            --calc-operator-hover-bg: rgba(0,0,0,0.2);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
         }
-        
-        body.dark {
-            /* Dark Theme */
-            --text-color: #f3f4f6;
-            --text-color-light: #9ca3af;
-            --window-bg: rgba(32, 32, 32, 0.75);
-            --taskbar-bg: rgba(32, 32, 32, 0.65);
-            --start-menu-bg: rgba(42, 42, 42, 0.7);
-            --hover-bg: rgba(255, 255, 255, 0.1);
-            --separator-bg: rgba(255,255,255,0.1);
-            
-            --calc-btn-bg: rgba(255,255,255,0.1);
-            --calc-btn-hover-bg: rgba(255,255,255,0.2);
-            --calc-operator-bg: rgba(0,0,0,0.2);
-            --calc-operator-hover-bg: rgba(0,0,0,0.3);
+
+        .dark {
+            --glass-bg: rgba(30, 41, 59, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
 
         body {
-            font-family: 'Product Sans', sans-serif;
-            background-image: url('PASTE_YOUR_BASE64_ENCODED_IMAGE_HERE_IF_YOU_WANT_A_WALLPAPER)');
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(53, 174, 101, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
             background-size: cover;
-            background-position: center;
-            overflow: hidden;
-            color: var(--text-color);
+            min-height: 100vh;
         }
 
-        /* Mica/Acrylic Blur Effect */
-        .blur-backdrop {
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
+        .dark body {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(53, 174, 101, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
         }
 
-        .window-bg {
-             background-color: var(--window-bg);
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
         }
 
-        .taskbar-bg {
-            background-color: var(--taskbar-bg);
+        .glass-input {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
         }
-        
-        .start-menu-bg {
-             background-color: var(--start-menu-bg);
-        }
-
-        /* Window Styling */
-        .window {
-            min-width: 300px;
-            min-height: 200px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            
-            transition: opacity 0.2s, transform 0.2s, border-radius 0.2s ease;
-                        
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            transform: scale(1);
-            opacity: 1;
-            resize: both;
-            overflow: auto;
+        .dark .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: white;
         }
 
-        .window.transitioning {
-            transition: opacity 0.2s, transform 0.2s, border-radius 0.2s ease,
-                        width 0.25s cubic-bezier(0.25, 1, 0.5, 1), 
-                        height 0.25s cubic-bezier(0.25, 1, 0.5, 1), 
-                        top 0.25s cubic-bezier(0.25, 1, 0.5, 1), 
-                        left 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 0 2px rgba(53, 174, 101, 0.3);
+            outline: none;
         }
-        
-        .window.opening {
-             transform: scale(0.95);
-             opacity: 0;
+        .dark .glass-input:focus {
+            background: rgba(0, 0, 0, 0.4);
         }
 
-        .window.closing {
-            animation: windowCloseAnimation 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.8);
         }
 
-        .window.maximized {
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: calc(100% - var(--taskbar-height)) !important;
-            border-radius: 0;
-            box-shadow: none;
-            resize: none; 
+        /* Card Hover Effects */
+        .food-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .food-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
         }
 
-        .window.minimized {
-            transform: translateY(100px) scale(0.9);
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .title-bar {
-            height: 36px;
-            flex-shrink: 0;
-            cursor: move;
-        }
-
-        .title-bar-controls button {
-            width: 40px;
-            height: 36px;
-            transition: background-color 0.15s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .title-bar-controls button:hover {
-            background-color: var(--hover-bg);
-        }
-        
-        .title-bar-controls button.close-btn:hover {
-            background-color: var(--close-hover-bg);
-            color: var(--close-hover-text);
-        }
-
-        .content-area {
-            flex-grow: 1;
-            overflow: hidden; 
-        }
-        
-        /* Taskbar */
-        #taskbar {
-            height: var(--taskbar-height);
-        }
-        .taskbar-item::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 3px;
-            background-color: var(--accent-color);
-            border-radius: 2px;
-            transition: width 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        .taskbar-item.active::after {
-            width: 20px;
-        }
-        
-        /* New Spotlight Icon Style */
-        .spotlight-icon {
-            width: 18px;
-            height: 18px;
-            background-color: var(--text-color);
-            border-radius: 50%;
-        }
-
-        /* --- New Search Menu Styles --- */
-        #search-menu {
-            position: fixed;
-            width: 600px;
-            max-width: 90vw;
-            top: 20vh; /* Position from top */
-            left: 50%;
-            transform: translateX(-50%) scale(0.95);
-            max-height: 400px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+        /* Modal Transitions */
+        .modal-overlay {
             opacity: 0;
             visibility: hidden;
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, visibility 0.2s;
-            transform-origin: top center;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
-        #search-menu.show {
-            transform: translateX(-50%) scale(1);
+        .modal-overlay.active {
             opacity: 1;
             visibility: visible;
         }
-        
-        #search-input {
-            width: 100%;
-            padding: 16px 20px;
-            font-size: 1.25rem;
-            background-color: transparent;
-            border: none;
-            outline: none;
-            border-bottom: 1px solid var(--separator-bg);
-            flex-shrink: 0;
-            color: var(--text-color);
-        }
-        #search-input::placeholder {
-            color: var(--text-color-light);
-        }
-        
-        #search-results {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 8px;
-        }
-
-        .search-result-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
-        .search-result-item:hover {
-            background-color: var(--hover-bg);
-        }
-        /* New 'selected' style for keyboard navigation */
-        .search-result-item.selected {
-            background-color: var(--accent-color);
-            color: white;
-        }
-        .search-result-item.selected .search-result-path {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .search-result-icon {
-            font-size: 1.5rem;
-            width: 32px;
-            text-align: center;
-        }
-        .search-result-details {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .search-result-title {
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .search-result-path {
-            font-size: 0.75rem;
-            color: var(--text-color-light);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-
-        /* Clock Flyout */
-        #clock-flyout {
-            width: 360px;
-            bottom: calc(var(--taskbar-height) + 8px);
-            right: 16px; 
+        .modal-content {
             transform: scale(0.95) translateY(10px);
             opacity: 0;
-            visibility: hidden;
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, visibility 0.2s;
-            transform-origin: bottom right;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
         }
-        #clock-flyout.show {
+        .modal-overlay.active .modal-content {
             transform: scale(1) translateY(0);
             opacity: 1;
-            visibility: visible;
-        }
-        .calendar-day-header {
-            font-size: 0.75rem;
-            font-weight: 600;
-            opacity: 0.7;
-        }
-        .calendar-day {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
-        .calendar-day:not(.other-month):hover {
-            background-color: var(--hover-bg);
-        }
-        .calendar-day.other-month {
-            opacity: 0.3;
-        }
-        .calendar-day.today {
-            background-color: var(--accent-color);
-            color: white;
-            border-radius: 50%;
         }
 
-        /* Context Menu */
-        #context-menu {
-             background-color: rgba(248, 248, 248, 0.7);
-             transition: opacity 0.15s cubic-bezier(0.25, 1, 0.5, 1), transform 0.15s cubic-bezier(0.25, 1, 0.5, 1);
-             min-width: 200px;
-             transform: scale(0.95);
-             opacity: 0;
-             pointer-events: none;
-             display: none;
+        /* Scanning Animation */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #35ae65;
+            box-shadow: 0 0 4px #35ae65;
+            animation: scan 2s linear infinite;
         }
-        body.dark #context-menu {
-            background-color: rgba(42, 42, 42, 0.7);
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
         }
 
-        #context-menu.show {
-            transform: scale(1);
-            opacity: 1;
-            pointer-events: auto;
-            display: block;
-        }
-         .context-menu-item {
-             padding: 8px 16px;
-             cursor: pointer;
-             font-size: 14px;
-             transition: background-color 0.15s ease;
-         }
-         #context-menu.show .context-menu-item,
-         #context-menu.show .context-menu-separator {
-            animation: contextFadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            opacity: 0;
-            transform: translateX(-5px);
-         }
-
-         .context-menu-item:hover {
-             background-color: var(--hover-bg);
-         }
-         .context-menu-separator {
-            height: 1px;
-            background-color: var(--separator-bg);
-            margin: 4px 0;
-         }
-        
-        /* Keyframe Animations */
-        @keyframes windowCloseAnimation {
-            to {
-                opacity: 0;
-                transform: scale(0.92);
+        /* Mobile Optimization */
+        @media (max-width: 640px) {
+            .mobile-hide { display: none; }
+            .mobile-fab { 
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                z-index: 50;
             }
         }
-
-        @keyframes contextFadeIn {
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes itemClick {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(0.9); }
-        }
-        .item-click-anim {
-            animation: itemClick 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
-        body.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.4); }
-        body.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
-        /* Scrollbar for Search Menu */
-        #search-results::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.3); }
-        body.dark #search-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
-
-
-        /* App-specific Styles */
-        .calculator-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
-        .calc-display { /* background-color: rgba(0,0,0,0.1); */ border-bottom: 1px solid var(--separator-bg); word-wrap: break-word; word-break: break-all; }
-        .calc-btn { background-color: var(--calc-btn-bg); transition: background-color .15s ease; }
-        .calc-btn:hover { background-color: var(--calc-btn-hover-bg); }
-        .calc-btn.operator { background-color: var(--calc-operator-bg); }
-        .calc-btn.operator:hover { background-color: var(--calc-operator-hover-bg); }
-        .calc-btn.equals { background-color: var(--accent-color); color: white; }
-        .calc-btn.equals:hover { background-color: var(--accent-color-hover); }
-
-        .file-explorer { display: flex; height: 100%; }
-        .files-sidebar { width: 200px; flex-shrink: 0; background-color: rgba(0,0,0,0.05); }
-        body.dark .files-sidebar { background-color: rgba(255,255,255,0.05); }
-        .files-main { flex-grow: 1; display: flex; flex-direction: column; }
-        .files-breadcrumbs { flex-shrink: 0; }
-        .files-grid-container { flex-grow: 1; overflow-y: auto; }
-
-        .colors-app { display: flex; height: 100%; }
-        .colors-toolbar { width: 60px; flex-shrink: 0; /* background-color: rgba(0,0,0,0.05); */ border-right: 1px solid var(--separator-bg); }
-        body.dark .colors-toolbar { /* background-color: rgba(255,255,255,0.05); */ }
-        .color-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-        .color-swatch.active { border-color: var(--accent-color); }
-        .colors-canvas { 
-            cursor: crosshair;
-            min-width: 0;
-        }
-
-        .images-app { display: flex; justify-content: center; align-items: center; height: 100%; /* padding: 1rem; */ }
-        .images-app img { max-width: 100%; max-height: 100%; object-fit: contain; }
-
-        .zdeupload-app { padding: 2rem; text-align: center; }
-
-        /* Minesweeper Styles */
-        .minesweeper-app { display: flex; flex-direction: column; height: 100%; }
-        .minesweeper-info {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            /* background-color: rgba(0,0,0,0.05); */ /* <-- Removed this */
-            border-bottom: 1px solid var(--separator-bg); /* <-- Added this for separation */
-        }
-        /* body.dark .minesweeper-info { background-color: rgba(255,255,255,0.05); } */ /* <-- Removed this */
-        .minesweeper-info-box {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.25rem;
-            font-weight: bold;
-            padding: 4px 8px;
-            background-color: rgba(0,0,0,0.1);
-            min-width: 60px;
-            text-align: center;
-        }
-        .minesweeper-reset-btn {
-            width: 32px;
-            height: 32px;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid transparent;
-            background-color: var(--calc-btn-bg);
-            cursor: pointer;
-        }
-        .minesweeper-reset-btn:hover { background-color: var(--calc-btn-hover-bg); }
-        .minesweeper-grid {
-            flex-grow: 1;
-            display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            grid-template-rows: repeat(9, 1fr);
-            gap: 1px;
-            background-color: var(--separator-bg);
-            padding: 1px;
-            overflow: hidden; /* Prevent weird resizing artifacts */
-        }
-        .minesweeper-cell {
-            background-color: var(--calc-btn-bg);
-            transition: background-color 0.15s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem; /* 14px */
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-        }
-        .minesweeper-cell:hover {
-            background-color: var(--calc-btn-hover-bg);
-        }
-        .minesweeper-cell.revealed {
-            background-color: rgba(0,0,0,0.05);
-            cursor: default;
-        }
-        body.dark .minesweeper-cell.revealed {
-            background-color: rgba(255,255,255,0.05);
-        }
-        .minesweeper-cell.mine {
-            background-color: #e81123;
-        }
-        .minesweeper-cell[data-adjacent="1"] { color: #0078d4; }
-        .minesweeper-cell[data-adjacent="2"] { color: #38a169; }
-        .minesweeper-cell[data-adjacent="3"] { color: #e53e3e; }
-        .minesweeper-cell[data-adjacent="4"] { color: #003a6e; }
-        .minesweeper-cell[data-adjacent="5"] { color: #a13800; }
-        .minesweeper-cell[data-adjacent="6"] { color: #3182ce; }
-        .minesweeper-cell[data-adjacent="7"] { color: #000000; }
-        .minesweeper-cell[data-adjacent="8"] { color: #6b7280; }
-
-
-        /* Modal Dialog */
-        #modal-backdrop { 
-            background-color: rgba(0,0,0,0.5); 
-            transition: opacity 0.2s ease;
-            opacity: 0;
-        }
-        #modal-backdrop.show {
-            opacity: 1;
-        }
-        #modal-box {
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
-            transform: scale(0.95);
-            opacity: 0;
-        }
-        #modal-backdrop.show #modal-box {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        .btn-default { 
-            color: var(--text-color); 
-            background-color: rgba(0,0,0,0.1); 
-            transition: background-color 0.15s ease;
-        }
-        .btn-default:hover {
-            background-color: rgba(0,0,0,0.2);
-        }
-        body.dark .btn-default {
-            background-color: rgba(255,255,255,0.1); 
-        }
-        body.dark .btn-default:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-        .btn-accent { background-color: var(--accent-color); color: white; }
-        .btn-accent:hover { background-color: var(--accent-color-hover); }
-
-        .btn-danger { background-color: #e81123; color: white; transition: background-color 0.15s ease; }
-        .btn-danger:hover { background-color: #c50f1f; }
-
-        /* Override all rounded corners */
-        .rounded:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch):not(.files-grid button):not(.calendar-day), 
-        .rounded-lg:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch), 
-        .rounded-md:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch), 
-        .rounded-sm:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch), 
-        .rounded-full:not(.toggle-checkbox):not(.toggle-label):not(.color-swatch):not(.calendar-day),
-        #search-menu, /* Added search menu */
-        #context-menu, #modal-box, .window, #clock-flyout {
-            border-radius: 0 !important;
-        }
-        .title-bar, .content-area {
-            border-radius: 0 !important;
-        }
-        /* Allow rounded corners for file items */
-        .files-grid button {
-            border-radius: 4px !important;
-        }
-        .calendar-day.today {
-            border-radius: 50% !important; /* Allow today's date to be round */
-        }
-
     </style>
 </head>
-<body class="select-none">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 antialiased selection:bg-nature-500 selection:text-white transition-colors duration-500">
 
-    <main id="desktop" class="w-screen h-screen"></main>
+    <!-- App Container -->
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 min-h-screen flex flex-col gap-6">
+        
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in relative z-40">
+            <div class="flex items-center gap-4">
+                <div class="bg-nature-500 text-white p-3 rounded-2xl shadow-lg shadow-nature-500/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M12 8v4"/>
+                        <path d="M12 16h.01"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-nature-700 to-nature-500 dark:from-nature-400 dark:to-nature-200" data-i18n="app_title">
+                        FreshKeep
+                    </h1>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium" id="current-date">Loading date...</p>
+                </div>
+            </div>
 
-    <div id="context-menu" class="fixed blur-backdrop shadow-lg p-1 z-[5000]"></div>
-    
-    <div id="modal-backdrop" class="fixed inset-0 z-[4000] hidden items-center justify-center">
-        <div id="modal-box" class="blur-backdrop window-bg shadow-xl p-6 w-full max-w-sm">
-            <h3 id="modal-title" class="text-lg font-bold mb-4">Modal Title</h3>
-            <div id="modal-content" class="mb-6"></div>
-            <div id="modal-buttons" class="flex justify-end gap-2"></div>
-        </div>
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <!-- Lang Toggle -->
+                <button onclick="app.toggleLang()" class="p-3 rounded-xl glass-panel hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors font-bold text-xs w-12 h-12 flex items-center justify-center">
+                    <span id="lang-display">繁中</span>
+                </button>
+
+                <!-- Theme Toggle -->
+                <button id="theme-toggle" class="p-3 rounded-xl glass-panel hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors group" aria-label="Toggle Dark Mode">
+                    <svg id="sun-icon" class="hidden dark:block w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg id="moon-icon" class="block dark:hidden w-5 h-5 text-slate-600 group-hover:text-nature-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 24.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+
+                <!-- Notifications -->
+                <div class="relative z-50">
+                    <button id="notification-btn" class="p-3 rounded-xl glass-panel hover:bg-white/50 dark:hover:bg-slate-700/50 transition-colors relative">
+                        <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span id="notification-badge" class="absolute top-2 right-2 w-2.5 h-2.5 bg-danger-500 rounded-full border-2 border-white dark:border-slate-800 hidden animate-pulse-slow"></span>
+                    </button>
+                    <!-- Notification Dropdown -->
+                    <div id="notification-dropdown" class="absolute right-0 mt-4 w-80 glass-panel rounded-2xl shadow-xl p-4 hidden transform origin-top-right transition-all">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 dark:text-white" data-i18n="notifications">Notifications</h3>
+                            <button class="text-xs text-nature-600 hover:text-nature-700 font-medium" onclick="app.clearNotifications()" data-i18n="clear_all">Clear all</button>
+                        </div>
+                        <ul id="notification-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            <li class="text-center text-sm text-slate-400 py-4" data-i18n="no_alerts">No new alerts</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Add Button (Desktop) -->
+                <button onclick="app.openModal()" class="hidden md:flex items-center gap-2 bg-nature-600 hover:bg-nature-700 text-white px-5 py-3 rounded-xl font-medium transition-all shadow-lg shadow-nature-600/20 active:scale-95">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span data-i18n="add_item">Add Item</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Overview -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style="animation-delay: 0.1s;">
+            <!-- Total Items -->
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 w-24 h-24 bg-nature-100 dark:bg-nature-900/30 rounded-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
+                <div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 font-medium" data-i18n="total_inventory">Total Inventory</p>
+                    <h2 class="text-3xl font-display font-bold text-slate-800 dark:text-white" id="stat-total">0</h2>
+                </div>
+            </div>
+
+            <!-- Fresh Items -->
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
+                <div class="p-3 bg-nature-100 dark:bg-nature-900/30 text-nature-600 dark:text-nature-400 rounded-xl">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 font-medium" data-i18n="good_standing">In Good Standing</p>
+                    <h2 class="text-3xl font-display font-bold text-slate-800 dark:text-white" id="stat-fresh">0</h2>
+                </div>
+            </div>
+
+            <!-- Expiring Soon -->
+            <div class="glass-panel p-6 rounded-2xl flex items-center gap-4 relative overflow-hidden group border-l-4 border-warning-400">
+                <div class="absolute right-0 top-0 w-24 h-24 bg-orange-100 dark:bg-orange-900/30 rounded-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
+                <div class="p-3 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-xl">
+                    <svg class="w-8 h-8 animate-bounce-slight" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 font-medium" data-i18n="action_required">Action Required</p>
+                    <h2 class="text-3xl font-display font-bold text-slate-800 dark:text-white" id="stat-expiring">0</h2>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 animate-slide-up" style="animation-delay: 0.2s;">
+            
+            <!-- Filters & Categories Sidebar -->
+            <aside class="lg:col-span-1 space-y-4">
+                <div class="glass-panel p-5 rounded-2xl sticky top-4 z-30">
+                    <h3 class="text-lg font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-nature-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        <span data-i18n="filters">Filters</span>
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        <button onclick="app.setFilter('all')" class="filter-btn active w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between items-center group">
+                            <span data-i18n="filter_all">All Items</span>
+                            <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-0.5 px-2 rounded-lg text-xs" id="count-all">0</span>
+                        </button>
+                        <button onclick="app.setFilter('expiring')" class="filter-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-orange-50 dark:hover:bg-orange-900/20 text-slate-600 dark:text-slate-400 flex justify-between items-center group">
+                            <span class="group-hover:text-orange-600 dark:group-hover:text-orange-400" data-i18n="filter_expiring">Expiring Soon</span>
+                            <span class="bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 py-0.5 px-2 rounded-lg text-xs" id="count-expiring">0</span>
+                        </button>
+                        <button onclick="app.setFilter('expired')" class="filter-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-400 flex justify-between items-center group">
+                            <span class="group-hover:text-red-600 dark:group-hover:text-red-400" data-i18n="filter_expired">Expired</span>
+                            <span class="bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 py-0.5 px-2 rounded-lg text-xs" id="count-expired">0</span>
+                        </button>
+                        <button onclick="app.setFilter('history')" class="filter-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/20 text-slate-600 dark:text-slate-400 flex justify-between items-center group">
+                            <span class="group-hover:text-purple-600 dark:group-hover:text-purple-400" data-i18n="filter_history">History / Consumed</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                    </div>
+
+                    <hr class="my-4 border-slate-200 dark:border-slate-700">
+                    
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3" data-i18n="sort_by">Sort By</h4>
+                    <select id="sort-select" onchange="app.sortItems(this.value)" class="w-full glass-input p-2.5 rounded-xl text-sm">
+                        <option value="date-asc" data-i18n="sort_date_asc">Date (Soonest First)</option>
+                        <option value="date-desc" data-i18n="sort_date_desc">Date (Latest First)</option>
+                        <option value="name-asc" data-i18n="sort_name_asc">Name (A-Z)</option>
+                        <option value="category-asc" data-i18n="sort_category">Category</option>
+                    </select>
+                </div>
+            </aside>
+
+            <!-- Food List Section -->
+            <section class="lg:col-span-3">
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden glass-panel rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+                    <div class="w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-16 h-16 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-display font-bold text-slate-800 dark:text-white mb-2" data-i18n="empty_title">Pantry is Empty</h3>
+                    <p class="text-slate-500 dark:text-slate-400 max-w-sm mb-8" data-i18n="empty_desc">Start tracking your food to reduce waste and save money. Add your first item now!</p>
+                    <button onclick="app.openModal()" class="bg-nature-600 hover:bg-nature-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
+                        <span data-i18n="add_first_item">Add First Item</span>
+                    </button>
+                    <button onclick="app.loadMockData()" class="mt-4 text-sm text-nature-600 hover:text-nature-700 underline">
+                        <span data-i18n="load_demo">Load Demo Data</span>
+                    </button>
+                </div>
+
+                <!-- Grid/List View -->
+                <div id="food-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <!-- Items injected by JS -->
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- Clock Flyout -->
-    <div id="clock-flyout" class="fixed blur-backdrop start-menu-bg shadow-2xl p-6 z-[3000]">
-        <div class="flyout-clock-time text-4xl font-light"></div>
-        <div class="flyout-clock-date text-lg mb-4"></div>
-        <div class="calendar-grid grid grid-cols-7 gap-1 text-center"></div>
-    </div>
+    <!-- Floating Action Button (Mobile) -->
+    <button onclick="app.openModal()" class="mobile-fab md:hidden bg-nature-600 hover:bg-nature-700 text-white p-4 rounded-full shadow-lg shadow-nature-600/40 active:scale-90 transition-transform">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+    </button>
 
-    <!-- --- New Search Menu HTML --- -->
-    <div id="search-menu" class="fixed blur-backdrop start-menu-bg shadow-2xl z-[3000]">
-        <input type="text" id="search-input" placeholder="Search apps and files...">
-        <div id="search-results">
-            <!-- Search results will be dynamically generated here -->
-        </div>
-    </div>
+    <!-- Add Item Modal -->
+    <div id="add-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="app.closeModal()"></div>
+        <div class="modal-content glass-panel w-full max-w-md rounded-3xl p-0 relative bg-white dark:bg-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header / Tabs -->
+            <div class="flex border-b border-slate-100 dark:border-slate-700">
+                <button onclick="app.switchTab('manual')" id="tab-manual" class="flex-1 py-4 text-sm font-bold text-nature-600 border-b-2 border-nature-600 transition-colors">
+                    Manual Entry
+                </button>
+                <button onclick="app.switchTab('scan')" id="tab-scan" class="flex-1 py-4 text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border-b-2 border-transparent transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    AI Scan
+                </button>
+            </div>
 
-
-    <footer id="taskbar" class="fixed bottom-0 left-0 right-0 blur-backdrop taskbar-bg flex justify-start px-4 z-[2000]">
-        <div class="flex items-center gap-2">
-            <button id="start-btn" class="taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center justify-center">
-                <!-- New Spotlight Icon -->
-                <span class="spotlight-icon"></span>
+            <button onclick="app.closeModal()" class="absolute top-3 right-3 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
-            <div id="pinned-apps" class="flex items-center gap-2">
-                 </div>
-             <div class="h-6 w-px bg-black/10 dark:bg-white/20 mx-1"></div>
-            <div id="taskbar-apps" class="flex items-center gap-2"></div>
-        </div>
-
-        <!-- Clock Container -->
-        <div id="clock-container" class="absolute right-0 top-0 h-full flex items-center px-4 hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer">
-            <div id="clock" class="text-sm text-center"></div>
-        </div>
-    </footer>
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const desktop = document.getElementById('desktop');
-            const taskbarApps = document.getElementById('taskbar-apps');
-            const pinnedAppsContainer = document.getElementById('pinned-apps');
-            const startBtn = document.getElementById('start-btn');
-            
-            // --- New Search Menu Elements ---
-            const searchMenu = document.getElementById('search-menu');
-            const searchInput = document.getElementById('search-input');
-            const searchResults = document.getElementById('search-results');
-            
-            const clock = document.getElementById('clock');
-            const contextMenu = document.getElementById('context-menu');
-            const modalBackdrop = document.getElementById('modal-backdrop');
-
-            // --- Clock Flyout Elements ---
-            const clockContainer = document.getElementById('clock-container');
-            const clockFlyout = document.getElementById('clock-flyout');
-            const flyoutTime = clockFlyout.querySelector('.flyout-clock-time');
-            const flyoutDate = clockFlyout.querySelector('.flyout-clock-date');
-            const calendarGrid = clockFlyout.querySelector('.calendar-grid');
-            
-            let openWindows = {};
-            let zIndexCounter = 100;
-            let windowCounter = 0;
-            let currentCalculation = '0';
-            let virtualClipboard = ''; // Our new virtual clipboard
-            let pinnedApps = new Set(); // <-- CHANGED: Removed default pinned apps
-            
-            let searchSelectionIndex = 0; // For search keyboard navigation
-
-            // --- VFS (Virtual File System) ---
-            const VFS_STORAGE_KEY = 'polarisVfs';
-            // const HIDDEN_APPS_KEY = 'polarisHiddenApps'; // Removed
-            
-            // --- Removed Tile Layout Storage ---
-
-            const defaultFileSystem = {
-                'type': 'directory', 'children': {
-                    'home': { 'type': 'directory', 'children': {
-                            'user': { 'type': 'directory', 'children': {
-                                    'Applications': { 'type': 'directory', 'children': {} }, // Added Applications dir
-                                    'Documents': { 'type': 'directory', 'children': { 'report.docx': { 'type': 'file', 'content': 'This is a simulated Word document.' } } },
-                                    'Downloads': { 'type': 'directory', 'children': {} },
-                                    'ver.txt': { 'type': 'file', 'content': 'Last updated 11-17-25\nCore OS Polaris\nWeb UI 0.21.5\n\nThis project is at extremely early-stage!' }
-                                }
-                            }
-                        }
-                    },
-                    'etc': { 'type': 'directory', 'children': { 'config.conf': { 'type': 'file', 'content': 'setting=true' } } },
-                }
-            };
-            
-            let fileSystem; // This will be our live, mutable VFS object
-
-            function populateDefaultApps() {
-                const appsDir = getFileSystemNode('/home/user/Applications');
-                if (!appsDir || appsDir.type !== 'directory') {
-                    console.error("Critical: /home/user/Applications not found.");
-                    return;
-                }
+            <div class="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
                 
-                Object.keys(appConfig).forEach(appId => {
-                    // Don't create .app files for system apps
-                    if (appId === 'preferences' || appId === 'files' || appId === 'search') return; // <-- ADDED 'search'
+                <!-- Manual Entry Form -->
+                <div id="view-manual">
+                    <h2 class="text-2xl font-display font-bold mb-1 text-slate-800 dark:text-white" data-i18n="add_provision">Add Provision</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" data-i18n="add_desc">Enter details to track freshness.</p>
                     
-                    const appFileName = `${appConfig[appId].title}.app`;
-                    if (!appsDir.children[appFileName]) {
-                        appsDir.children[appFileName] = {
-                            type: 'app', // Special type
-                            content: appId // Links to the appConfig key
-                        };
-                    }
-                });
-            }
-
-            function saveVFSToLocalStorage() {
-                try {
-                    localStorage.setItem(VFS_STORAGE_KEY, JSON.stringify(fileSystem));
-                } catch (e) {
-                    console.error("Failed to save VFS to localStorage:", e);
-                    showModal("Save Error", "Could not save file system changes. Storage might be full.", [{label: 'OK'}]);
-                }
-            }
-
-            function initializeVFS() {
-                const savedVfs = localStorage.getItem(VFS_STORAGE_KEY);
-                if (savedVfs) {
-                    try {
-                        fileSystem = JSON.parse(savedVfs);
-                        if (!fileSystem.type || !fileSystem.children) {
-                           throw new Error("Invalid VFS structure.");
-                        }
-                    } catch (e) {
-                        console.error("Error parsing VFS from localStorage, resetting:", e);
-                        fileSystem = JSON.parse(JSON.stringify(defaultFileSystem)); // Deep copy
-                    }
-                } else {
-                    fileSystem = JSON.parse(JSON.stringify(defaultFileSystem)); // Deep copy
-                }
-                
-                // VFS Migration: Ensure /home/user/Applications exists
-                let homeUser = getFileSystemNode('/home/user');
-                if (homeUser && !homeUser.children['Applications']) {
-                    console.log("Migrating VFS: Adding /Applications directory.");
-                    homeUser.children['Applications'] = { type: 'directory', children: {} };
-                }
-                
-                // --- VFS Cleanup: Remove orphaned SearchExperience.app ---
-                let appsDir = getFileSystemNode('/home/user/Applications');
-                if (appsDir && appsDir.children['SearchExperience.app']) {
-                    console.log("VFS Cleanup: Removing old SearchExperience.app");
-                    delete appsDir.children['SearchExperience.app'];
-                }
-
-                // Populate .app files
-                populateDefaultApps();
-                
-                // Save any migrations or additions
-                saveVFSToLocalStorage(); 
-            }
-            
-            // --- Removed Hidden App functions ---
-            
-            const appConfig = {
-                search: { // Renamed from startMenu
-                    title: "SearchExperience", emoji: "🔍", multiInstance: false, content: null // Not a window
-                },
-                preferences: {
-                    title: "Preferences", emoji: "⚙️", multiInstance: false,
-                    content: `<div class="p-8">
-                        <h1 class="text-2xl font-bold mb-4">Preferences</h1>
-                        <div class="flex items-center justify-between py-2">
-                            <span>Dark Mode</span>
-                            <label id="dark-mode-toggle" class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="dark-mode-checkbox" class="sr-only peer toggle-checkbox">
-                                <div class="toggle-label w-10 h-5 bg-gray-300 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-[20px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-                        <div class="flex items-center justify-between py-4 mt-4 border-t border-black/10 dark:border-white/10">
-                            <div class="flex flex-col">
-                                <span>Reset File System</span>
-                                <span class="text-xs text-gray-500">Resets files and restores all apps.</span>
-                            </div>
-                            <button id="reset-vfs-btn" class="px-3 py-1 text-sm btn-default">Reset</button>
-                        </div>
-                    </div>`, width: '500px', height: '400px'
-                },
-                texts: {
-                    title: "Texts", emoji: "📝", multiInstance: true,
-                    content: `<div class="w-full h-full flex flex-col">
-                        <textarea class="texts-textarea w-full h-full p-2 border-0 resize-none focus:outline-none bg-transparent font-mono text-sm"></textarea>
-                    </div>`, width: '600px', height: '400px'
-                },
-                numbers: {
-                    title: "Numbers", emoji: "🧮", multiInstance: true,
-                    content: `<div class="flex flex-col h-full">
-                        <div id="calc-display" class="calc-display text-4xl text-right p-4 flex items-end justify-end font-light">0</div>
-                        <div class="calculator-grid flex-shrink-0 flex-grow">
-                            <button onclick="clearCalc()" class="calc-btn operator text-xl">AC</button>
-                            <button onclick="deleteLastChar()" class="calc-btn operator text-xl">DEL</button>
-                            <button onclick="handleCalcInput('%')" class="calc-btn operator text-xl">%</button>
-                            <button onclick="handleCalcInput('/')" class="calc-btn operator text-xl">÷</button>
-                            <button onclick="handleCalcInput('7')" class="calc-btn text-xl">7</button>
-                            <button onclick="handleCalcInput('8')" class="calc-btn text-xl">8</button>
-                            <button onclick="handleCalcInput('9')" class="calc-btn text-xl">9</button>
-                            <button onclick="handleCalcInput('*')" class="calc-btn operator text-xl">×</button>
-                            <button onclick="handleCalcInput('4')" class="calc-btn text-xl">4</button>
-                            <button onclick="handleCalcInput('5')" class="calc-btn text-xl">5</button>
-                            <button onclick="handleCalcInput('6')" class="calc-btn text-xl">6</button>
-                            <button onclick="handleCalcInput('-')" class="calc-btn operator text-xl">-</button>
-                            <button onclick="handleCalcInput('1')" class="calc-btn text-xl">1</button>
-                            <button onclick="handleCalcInput('2')" class="calc-btn text-xl">2</button>
-                            <button onclick="handleCalcInput('3')" class="calc-btn text-xl">3</button>
-                            <button onclick="handleCalcInput('+')" class="calc-btn operator text-xl">+</button>
-                            <button onclick="handleCalcInput('0')" class="calc-btn text-xl col-span-2">0</button>
-                            <button onclick="handleCalcInput('.')" class="calc-btn text-xl">.</button>
-                            <button onclick="calculateResult()" class="calc-btn equals text-xl">=</button>
-                        </div>
-                    </div>`, width: '320px', height: '480px'
-                },
-                files: {
-                    title: "Files", emoji: "📁", multiInstance: true,
-                    content: `<div class="file-explorer">
-                        <div class="files-sidebar p-2">
-                           <button data-path="/home/user" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Home</button>
-                           <button data-path="/home/user/Applications" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Applications</button>
-                           <button data-path="/home/user/Documents" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Documents</button>
-                           <button data-path="/home/user/Downloads" class="w-full text-left p-2 hover:bg-black/10 dark:hover:bg-white/10">Downloads</button>
-                        </div>
-                        <div class="files-main">
-                            <div class="files-breadcrumbs p-2 border-b border-black/10 dark:border-white/10">/</div>
-                            <div class="files-grid-container p-4">
-                               <div class="files-grid grid grid-cols-4 gap-4"></div>
-                            </div>
-                        </div>
-                    </div>`, width: '700px', height: '500px'
-                },
-                colors: {
-                    title: "Colors", emoji: "🎨", multiInstance: true,
-                    content: `<div class="colors-app">
-                        <div class="colors-toolbar p-2 flex flex-col items-center gap-2">
-                            <button data-color="#000000" class="color-swatch active" style="background-color: #000000;"></button>
-                            <button data-color="#e53e3e" class="color-swatch" style="background-color: #e53e3e;"></button>
-                            <button data-color="#38a169" class="color-swatch" style="background-color: #38a169;"></button>
-                            <button data-color="#3182ce" class="color-swatch" style="background-color: #3182ce;"></button>
-                            <button data-color="#f6e05e" class="color-swatch" style="background-color: #f6e05e;"></button>
-                            <button class="mt-auto p-2 hover:bg-black/10 dark:hover:bg-white/10" onclick="clearCanvas(this)">Clear</button>
-                        </div>
-                        <canvas class="colors-canvas flex-grow bg-white"></canvas>
-                    </div>`, width: '600px', height: '400px'
-                },
-                images: {
-                    title: "Images", emoji: "🖼️", multiInstance: true,
-                    content: `<div class="images-app"><img src="" alt="Image view"></div>`,
-                    width: '600px', height: '400px'
-                },
-                zdeupload: {
-                    title: "zDevUpload", emoji: "📤", multiInstance: false,
-                    content: `<div class="zdeupload-app flex flex-col items-center justify-center h-full">
-                        <h2 class="text-xl font-semibold mb-4">Upload a File</h2>
-                        <p class="text-sm text-gray-500 mb-4">Upload .txt, .png, .jpg, or .gif files to the virtual file system.</p>
-                        <input type="file" id="file-uploader" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"/>
-                    </div>`, width: '400px', height: '250px'
-                },
-                minesweeper: {
-                    title: "Minesweeper", emoji: "💣", multiInstance: true,
-                    content: `<div class="minesweeper-app">
-                        <div class="minesweeper-info">
-                            <div id="mine-count" class="minesweeper-info-box">10</div>
-                            <button id="reset-game" class="minesweeper-reset-btn">🙂</button>
-                            <div id="timer" class="minesweeper-info-box">0</div>
-                        </div>
-                        <div id="minesweeper-grid" class="minesweeper-grid"></div>
-                    </div>`, width: '400px', height: '460px'
-                }
-            };
-
-            function animateClick(element) {
-                if (!element) return;
-                element.classList.add('item-click-anim');
-                element.addEventListener('animationend', () => {
-                    element.classList.remove('item-click-anim');
-                }, { once: true });
-            }
-
-            // --- Clock ---
-            function updateClock() {
-                const now = new Date();
-                // Taskbar Clock
-                const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const date = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: '2-digit' });
-                clock.innerHTML = `${time}<br>${date}`;
-                
-                // Flyout Clock
-                if (clockFlyout.classList.contains('show')) {
-                    const flyoutTimeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-                    const flyoutDateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-                    flyoutTime.textContent = flyoutTimeStr;
-                    flyoutDate.textContent = flyoutDateStr;
-                }
-            }
-            setInterval(updateClock, 1000);
-            updateClock();
-
-            function renderCalendar(year, month) {
-                calendarGrid.innerHTML = '';
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                
-                const firstDayOfMonth = new Date(year, month, 1);
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const startDayOfWeek = firstDayOfMonth.getDay(); // 0 (Sun) - 6 (Sat)
-                
-                // Add day headers (S, M, T, W, T, F, S)
-                const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-                dayNames.forEach(day => {
-                    const header = document.createElement('div');
-                    header.className = 'calendar-day-header';
-                    header.textContent = day;
-                    calendarGrid.appendChild(header);
-                });
-                
-                // Get days from previous month
-                const daysInPrevMonth = new Date(year, month, 0).getDate();
-                for (let i = 0; i < startDayOfWeek; i++) {
-                    const day = document.createElement('div');
-                    day.className = 'calendar-day other-month';
-                    day.textContent = daysInPrevMonth - startDayOfWeek + i + 1;
-                    calendarGrid.appendChild(day);
-                }
-                
-                // Add days for current month
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const day = document.createElement('div');
-                    day.className = 'calendar-day';
-                    day.textContent = i;
-                    
-                    const currentDate = new Date(year, month, i);
-                    if (currentDate.getTime() === today.getTime()) {
-                        day.classList.add('today');
-                    }
-                    calendarGrid.appendChild(day);
-                }
-                
-                // Add days for next month
-                const totalCells = 42; // 6 rows * 7 days
-                const cellsFilled = startDayOfWeek + daysInMonth;
-                const remainingCells = totalCells - cellsFilled;
-                
-                for (let i = 1; i <= remainingCells; i++) {
-                    const day = document.createElement('div');
-                    day.className = 'calendar-day other-month';
-                    day.textContent = i;
-                    calendarGrid.appendChild(day);
-                }
-            }
-            
-            // --- New Search Menu Logic ---
-            startBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                animateClick(e.currentTarget);
-                
-                // --- VFS CHECK ---
-                // No longer check VFS for 'search', it's a system app
-                // if (!checkAppVfsStatus('search')) { ... } // Removed
-                // --- END VFS CHECK ---
-                
-                const isHidden = !searchMenu.classList.contains('show');
-                searchMenu.classList.toggle('show');
-                clockFlyout.classList.remove('show'); // Close clock flyout
-                
-                if (isHidden) {
-                    // FIX: Add a short delay to allow the animation to complete
-                    setTimeout(() => searchInput.focus(), 200); 
-                    performSearch(''); // Show initial state
-                } else {
-                    searchInput.value = ''; // Clear search on close
-                }
-            });
-
-            searchInput.addEventListener('input', (e) => performSearch(e.target.value));
-            searchInput.addEventListener('keydown', handleSearchKeydown); // Added keydown listener
-            
-            function handleSearchKeydown(e) {
-                const items = searchResults.querySelectorAll('.search-result-item');
-                if (items.length === 0) return;
-
-                switch (e.key) {
-                    case 'ArrowDown':
-                    // case 'Tab': // Allow Tab to navigate down
-                        e.preventDefault();
-                        searchSelectionIndex = (searchSelectionIndex + 1) % items.length;
-                        updateSearchSelection(items);
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        searchSelectionIndex = (searchSelectionIndex - 1 + items.length) % items.length;
-                        updateSearchSelection(items);
-                        break;
-                    case 'Enter':
-                        e.preventDefault();
-                        const selectedItem = items[searchSelectionIndex];
-                        if (selectedItem) {
-                            selectedItem.click(); // Trigger the click handler
-                        }
-                        break;
-                }
-            }
-
-            function updateSearchSelection(items) {
-                items.forEach((item, index) => {
-                    if (index === searchSelectionIndex) {
-                        item.classList.add('selected');
-                        // Scroll item into view
-                        item.scrollIntoView({ block: 'nearest' });
-                    } else {
-                        item.classList.remove('selected');
-                    }
-                });
-            }
-            
-            function performSearch(query) {
-                searchResults.innerHTML = '';
-                searchSelectionIndex = 0; // Reset selection index
-                const lowerQuery = query.toLowerCase();
-                let resultCount = 0;
-
-                // Search Apps
-                Object.keys(appConfig).forEach(appId => {
-                    if (appId === 'search') return; // <-- BUG FIX: This line was commented out
-                    
-                    const config = appConfig[appId];
-                    if (config.title.toLowerCase().includes(lowerQuery)) {
-                        const item = document.createElement('div');
-                        item.className = 'search-result-item';
-                        item.innerHTML = `
-                            <span class="search-result-icon">${config.emoji}</span>
-                            <div class="search-result-details">
-                                <span class="search-result-title">${config.title}</span>
-                                <span class="search-result-path">Application</span>
-                            </div>
-                        `;
-                        item.onclick = () => {
-                            createWindow(appId);
-                            searchMenu.classList.remove('show');
-                            searchInput.value = '';
-                        };
-                        searchResults.appendChild(item);
-                        resultCount++;
-                    }
-                });
-
-                // Search Files
-                function searchVFS(node, path) {
-                    if (!node || !node.children) return;
-
-                    Object.keys(node.children).forEach(name => {
-                        const childNode = node.children[name];
-                        const fullPath = `${path === '/' ? '' : path}/${name}`;
+                    <form id="add-form" onsubmit="app.handleFormSubmit(event)" class="space-y-4">
+                        <input type="hidden" id="item-id">
                         
-                        // --- BUG FIX: Don't show SearchExperience.app in results ---
-                        if (name === 'SearchExperience.app') return;
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_name">Product Name</label>
+                            <input type="text" id="inp-name" required placeholder="e.g., Organic Milk" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white placeholder-slate-400">
+                        </div>
 
-                        if (name.toLowerCase().includes(lowerQuery) && childNode.type !== 'app') {
-                            let icon = '📄';
-                            if (childNode.type === 'directory') icon = '📁';
-                            else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) icon = '🖼️';
-
-                            const item = document.createElement('div');
-                            item.className = 'search-result-item';
-                            item.innerHTML = `
-                                <span class="search-result-icon">${icon}</span>
-                                <div class="search-result-details">
-                                    <span class="search-result-title">${name}</span>
-                                    <span class="search-result-path">${path}</span>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_category">Category</label>
+                                <div class="relative">
+                                    <select id="inp-category" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white appearance-none cursor-pointer">
+                                        <option value="dairy" data-i18n="cat_dairy">Dairy & Eggs</option>
+                                        <option value="fruit" data-i18n="cat_fruit">Fruit & Veg</option>
+                                        <option value="meat" data-i18n="cat_meat">Meat & Fish</option>
+                                        <option value="grain" data-i18n="cat_grain">Grains & Bread</option>
+                                        <option value="drink" data-i18n="cat_drink">Beverages</option>
+                                        <option value="snack" data-i18n="cat_snack">Snacks</option>
+                                        <option value="frozen" data-i18n="cat_frozen">Frozen</option>
+                                        <option value="canned" data-i18n="cat_canned">Pantry & Canned</option>
+                                        <option value="condiment" data-i18n="cat_condiment">Condiments</option>
+                                        <option value="other" data-i18n="cat_other">Other</option>
+                                    </select>
+                                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
                                 </div>
-                            `;
-                            
-                            item.onclick = () => {
-                                if (childNode.type === 'directory') {
-                                    const filesWin = createWindow('files');
-                                    // Wait a moment for window to be created, then render path
-                                    setTimeout(() => renderFileSystem(filesWin, fullPath), 50);
-                                } else if (name.endsWith('.txt') || name.endsWith('.conf')) {
-                                    openFileInTexts(fullPath);
-                                } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
-                                    openImageInViewer(fullPath);
-                                } else {
-                                    // --- NEW UNKNOWN FILE HANDLER ---
-                                    showModal('Open with...', `How do you want to open "${name}"?`, [
-                                        { label: 'Cancel' },
-                                        { label: 'Images', class: 'btn-accent', action: () => openImageInViewer(fullPath) },
-                                        { label: 'Texts', class: 'btn-accent', action: () => openFileInTexts(fullPath) }
-                                    ]);
-                                }
-                                searchMenu.classList.remove('show');
-                                searchInput.value = '';
-                            };
-                            searchResults.appendChild(item);
-                            resultCount++;
-                        }
-
-                        if (childNode.type === 'directory') {
-                            searchVFS(childNode, fullPath);
-                        }
-                    });
-                }
-                
-                if (lowerQuery.length > 0) { // Only search VFS if there's a query
-                    searchVFS(getFileSystemNode('/'), '/');
-                }
-
-                if (resultCount === 0 && lowerQuery.length > 0) {
-                    searchResults.innerHTML = `<div class="p-4 text-center text-gray-500">No results found for "${query}"</div>`;
-                } else if (resultCount === 0 && lowerQuery.length === 0) {
-                    searchResults.innerHTML = `<div class="p-4 text-center text-gray-500">Type to search for apps and files.</div>`;
-                }
-                
-                // Auto-select the first item
-                const items = searchResults.querySelectorAll('.search-result-item');
-                if (items.length > 0) {
-                    items[0].classList.add('selected');
-                }
-            }
-
-
-            // --- Clock Flyout ---
-            clockContainer.addEventListener('click', (e) => {
-                e.stopPropagation();
-                animateClick(e.currentTarget);
-                
-                // Update calendar and clock *before* showing
-                if (!clockFlyout.classList.contains('show')) {
-                    const now = new Date();
-                    renderCalendar(now.getFullYear(), now.getMonth());
-                    updateClock(); // Force update clocks
-                }
-                
-                clockFlyout.classList.toggle('show');
-                searchMenu.classList.remove('show'); // Close search menu
-                searchInput.value = '';
-            });
-            
-            // --- Global Click Handler & Dark Mode Toggle ---
-            function handleGlobalKeydown(e) {
-                // Don't trigger if typing in an input or search is already open
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-                
-                const isSearchOpen = searchMenu.classList.contains('show');
-                const isModalOpen = modalBackdrop.classList.contains('show');
-
-                if (e.key === ' ' && !isSearchOpen && !isModalOpen) {
-                    const hasOpenWindows = Object.values(openWindows).some(w => !w.minimized);
-                    if (!hasOpenWindows) {
-                        e.preventDefault(); // Prevent space from scrolling
-                        startBtn.click(); // Open search
-                    }
-                }
-            }
-            
-            document.body.addEventListener('click', (e) => {
-                if (!searchMenu.contains(e.target) && !startBtn.contains(e.target)) {
-                    searchMenu.classList.remove('show');
-                    searchInput.value = '';
-                }
-                if (!clockFlyout.contains(e.target) && !clockContainer.contains(e.target)) {
-                    clockFlyout.classList.remove('show');
-                }
-                
-                contextMenu.classList.remove('show');
-                
-                if (e.target.closest('#dark-mode-toggle')) {
-                    const checkbox = document.getElementById('dark-mode-checkbox');
-                    if (checkbox) {
-                        if (e.target.id === 'dark-mode-checkbox') {
-                             toggleDarkMode();
-                        } else {
-                            setTimeout(() => toggleDarkMode(checkbox.checked), 0);
-                        }
-                    }
-                }
-            });
-            
-            document.body.addEventListener('keydown', handleGlobalKeydown); // Add global key listener
-
-            function toggleDarkMode(forceState) {
-                const isDarkMode = typeof forceState === 'boolean' ? forceState : document.body.classList.toggle('dark');
-                if (typeof forceState === 'boolean') {
-                    document.body.classList.toggle('dark', isDarkMode);
-                }
-                
-                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-                document.querySelectorAll('#dark-mode-checkbox').forEach(cb => cb.checked = isDarkMode);
-            }
-
-            function applyInitialTheme() {
-                const savedTheme = localStorage.getItem('theme');
-                if (savedTheme === 'dark') {
-                    document.body.classList.add('dark');
-                }
-            }
-            
-            // --- Context Menu ---
-            document.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                const target = e.target;
-                const menuItems = getContextMenuItems(target);
-                if(menuItems.length > 0) {
-                    showContextMenu(e.clientX, e.clientY, menuItems);
-                }
-            });
-
-            function getContextMenuItems(target) {
-                // Removed Start Menu context logic
-                
-                const pinnedApp = target.closest('#pinned-apps .app-launcher');
-                if (pinnedApp) {
-                    const appId = pinnedApp.dataset.appId;
-                    const config = appConfig[appId];
-                    return [
-                        { label: 'Open', action: () => createWindow(appId) },
-                        { label: `Unpin ${config.title} from taskbar`, action: () => unPinApp(appId) }
-                    ];
-                }
-                
-                const taskbarApp = target.closest('#taskbar-apps .taskbar-item');
-                if(taskbarApp) {
-                    const instanceId = taskbarApp.dataset.instanceId;
-                    const winData = openWindows[instanceId];
-                    if (!winData) return [];
-                    
-                    const runningInstances = Object.values(openWindows).filter(w => w.appId === winData.appId);
-                    
-                    const items = [
-                        { label: winData.minimized ? 'Restore' : 'Minimize', action: () => {
-                            if (winData.minimized) focusWindow(winData.element);
-                            else minimizeWindow(winData.element);
-                        }},
-                        { label: 'Close', action: () => closeWindow(winData.element) }
-                    ];
-                    
-                    if (runningInstances.length > 1) {
-                         items.push({ label: `Close all ${runningInstances.length} instances`, action: () => {
-                            runningInstances.forEach(inst => closeWindow(inst.element, true));
-                         }});
-                    }
-                    return items;
-                }
-                
-                const windowTarget = target.closest('.window');
-                if (windowTarget && !windowTarget.dataset.appId) { // Check if it's a generic window part
-                    return [
-                        { label: 'Close', action: () => closeWindow(windowTarget) },
-                        { label: 'Minimize', action: () => minimizeWindow(windowTarget) }
-                    ];
-                }
-                
-                if (windowTarget && windowTarget.dataset.appId === 'texts') {
-                    return [
-                        { label: 'Save', action: () => saveNotepadFile(windowTarget) },
-                        { type: 'separator' },
-                        
-                        { 
-                            label: 'Cut', 
-                            action: () => {
-                                const textarea = windowTarget.querySelector('.texts-textarea');
-                                if (!textarea) return;
-                                const start = textarea.selectionStart;
-                                const end = textarea.selectionEnd;
-                                if (start === end) return; // Nothing selected
-                                
-                                const selectedText = textarea.value.substring(start, end);
-                                virtualClipboard = selectedText; // Store text
-                                
-                                // Remove text from textarea
-                                textarea.value = textarea.value.substring(0, start) + textarea.value.substring(end);
-                                // Move cursor
-                                textarea.selectionStart = textarea.selectionEnd = start;
-                                textarea.focus();
-                            }
-                        },
-                        { 
-                            label: 'Copy', 
-                            action: () => {
-                                const textarea = windowTarget.querySelector('.texts-textarea');
-                                if (!textarea) return;
-                                const start = textarea.selectionStart;
-                                const end = textarea.selectionEnd;
-                                if (start === end) return; // Nothing selected
-                                
-                                const selectedText = textarea.value.substring(start, end);
-                                virtualClipboard = selectedText; // Store text
-                                textarea.focus();
-                            }
-                        },
-                        { 
-                            label: 'Paste', 
-                            disabled: virtualClipboard === '', // Disable if clipboard is empty
-                            action: () => {
-                                const textarea = windowTarget.querySelector('.texts-textarea');
-                                if (!textarea || virtualClipboard === '') return;
-                                
-                                const text = virtualClipboard;
-                                
-                                // Insert text at current cursor position
-                                const start = textarea.selectionStart;
-                                const end = textarea.selectionEnd;
-                                textarea.value = textarea.value.substring(0, start) + text + textarea.value.substring(end);
-                                // Move cursor to end of pasted text
-                                textarea.selectionStart = textarea.selectionEnd = start + text.length;
-                                textarea.focus(); // Re-focus the textarea
-                            }
-                        }
-                       ];
-                }
-
-                const fileItem = target.closest('.files-grid button');
-                const filesWindow = target.closest('.window[data-app-id="files"]');
-
-                if (fileItem && filesWindow) {
-                    const filename = fileItem.dataset.filename;
-                    const fileType = fileItem.dataset.type;
-                    
-                    return [
-                        { label: 'Open', action: () => fileItem.click() },
-                        { type: 'separator' },
-                        { label: 'Rename', action: () => renameFileItem(filesWindow, filename) },
-                        { label: 'Delete', action: () => deleteFileItem(filesWindow, filename) }
-                    ];
-                }
-
-                if (filesWindow && target.closest('.files-grid-container')) {
-                    return [
-                        { label: 'New Folder', action: () => createNewItem(filesWindow, 'directory') },
-                        { label: 'New Text File', action: () => createNewItem(filesWindow, 'file') },
-                        { type: 'separator' },
-                        { label: 'Refresh', action: () => {
-                            const currentPath = filesWindow.dataset.currentPath || '/';
-                            renderFileSystem(filesWindow, currentPath);
-                        }}
-                    ];
-                }
-                
-                if (target.id === 'desktop') {
-                    return [
-                        { label: 'Reboot', action: () => location.reload() },
-                        { label: 'Personalize', action: () => createWindow('preferences') }
-                    ];
-                }
-                return [];
-            }
-
-            function showContextMenu(x, y, items) {
-                contextMenu.innerHTML = '';
-                items.forEach((item, index) => { 
-                    if(item.type === 'separator') {
-                         const separator = document.createElement('div');
-                         separator.className = 'context-menu-separator';
-                         separator.style.animationDelay = `${index * 0.02}s`; 
-                         contextMenu.appendChild(separator);
-                    } else {
-                        const menuItem = document.createElement('button');
-                        menuItem.className = 'context-menu-item w-full text-left';
-                        menuItem.textContent = item.label;
-                        menuItem.style.animationDelay = `${index * 0.02}s`; 
-                        if(item.disabled) {
-                            menuItem.disabled = true;
-                            menuItem.classList.add('opacity-50', 'cursor-default');
-                        } else {
-                            menuItem.onclick = (e) => {
-                               e.stopPropagation();
-                               item.action();
-                               contextMenu.classList.remove('show');
-                            };
-                        }
-                        contextMenu.appendChild(menuItem);
-                    }
-                });
-
-                contextMenu.style.visibility = 'hidden';
-                contextMenu.style.display = 'block';
-                const menuWidth = contextMenu.offsetWidth;
-                const menuHeight = contextMenu.offsetHeight;
-                
-                let finalX = x;
-                let finalY = y;
-                let transformOrigin = 'top left';
-
-                if (x + menuWidth > window.innerWidth) {
-                    finalX = x - menuWidth;
-                    transformOrigin = 'top right';
-                }
-
-                if (y + menuHeight > window.innerHeight) {
-                    finalY = y - menuHeight;
-                    transformOrigin = transformOrigin.replace('top', 'bottom');
-                }
-                
-                contextMenu.style.transformOrigin = transformOrigin;
-                contextMenu.style.left = `${finalX}px`;
-                contextMenu.style.top = `${finalY}px`;
-                contextMenu.style.visibility = '';
-                
-                requestAnimationFrame(() => contextMenu.classList.add('show'));
-            }
-
-            // --- Modal Dialog Logic ---
-            function showModal(title, content, buttons) {
-                modalBackdrop.querySelector('#modal-title').textContent = title;
-                const contentEl = modalBackdrop.querySelector('#modal-content');
-                contentEl.innerHTML = '';
-                if (typeof content === 'string') {
-                    contentEl.textContent = content;
-                } else {
-                    contentEl.appendChild(content);
-                }
-                
-                const buttonsEl = modalBackdrop.querySelector('#modal-buttons');
-                buttonsEl.innerHTML = '';
-                buttons.forEach(btn => {
-                    const button = document.createElement('button');
-                    button.textContent = btn.label;
-                    button.className = `px-4 py-2 text-sm font-medium ${btn.class || 'btn-default'}`;
-                    button.onclick = () => {
-                        // Special case for modal-within-modal (e.g., "File exists")
-                        if (btn.label === 'OK' && buttons.length === 1 && btn.action === undefined) {
-                           hideModal();
-                           return;
-                        }
-                        
-                        // Don't hide modal if the action returns false
-                        let result;
-                        if(btn.action) {
-                           result = btn.action();
-                        }
-                        
-                        if (result !== false) {
-                            hideModal();
-                        }
-                    };
-                    buttonsEl.appendChild(button);
-                });
-                
-                modalBackdrop.style.display = 'flex';
-                requestAnimationFrame(() => {
-                    modalBackdrop.classList.add('show');
-                });
-            }
-
-            function hideModal() {
-                modalBackdrop.classList.remove('show');
-                modalBackdrop.addEventListener('transitionend', () => {
-                    if (!modalBackdrop.classList.contains('show')) {
-                        modalBackdrop.style.display = 'none';
-                    }
-                }, { once: true });
-            }
-
-            // --- App Logic ---
-            // Numbers (Calculator)
-            window.updateCalcDisplay = () => {
-                const calcWindow = Object.values(openWindows).find(w => w.appId === 'numbers' && w.element.style.zIndex == zIndexCounter);
-                if(calcWindow) {
-                    const display = calcWindow.element.querySelector('#calc-display');
-                    if (display) display.textContent = currentCalculation || '0';
-                }
-            }
-            window.handleCalcInput = (value) => {
-                if (currentCalculation === '0' || currentCalculation === 'Error') currentCalculation = '';
-                currentCalculation += value;
-                updateCalcDisplay();
-            }
-            window.calculateResult = () => {
-                try {
-                    const expression = currentCalculation.replace(/×/g, '*').replace(/÷/g, '/');
-                    currentCalculation = String(new Function('return ' + expression)());
-                } catch (e) { currentCalculation = 'Error'; }
-                updateCalcDisplay();
-            }
-            window.clearCalc = () => { currentCalculation = '0'; updateCalcDisplay(); }
-            window.deleteLastChar = () => { currentCalculation = currentCalculation.slice(0, -1) || '0'; updateCalcDisplay(); }
-            
-            // Colors
-            window.clearCanvas = (button) => {
-                const canvas = button.closest('.colors-app').querySelector('.colors-canvas');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-
-            // --- Files & Texts Logic ---
-            function getFileSystemNode(path) {
-                if (!fileSystem) return null; // Guard against uninitialized VFS
-                if (path === '/') return fileSystem; // Handle root
-                return path.split('/').filter(p => p).reduce((node, part) => (node && node.type === 'directory' && node.children[part]) ? node.children[part] : null, fileSystem);
-            }
-
-            function renderFileSystem(win, path) {
-                const node = getFileSystemNode(path);
-                const grid = win.querySelector('.files-grid');
-                const breadcrumbs = win.querySelector('.files-breadcrumbs');
-                
-                win.dataset.currentPath = path;
-
-                if (!node || node.type !== 'directory' || !grid || !breadcrumbs) return;
-
-                grid.innerHTML = '';
-                Object.entries(node.children).forEach(([name, childNode]) => {
-                    // --- HIDE SearchExperience.app ---
-                    // if (name === 'SearchExperience.app') return; // No longer needed
-
-                    const item = document.createElement('button');
-                    item.dataset.filename = name;
-                    item.dataset.type = childNode.type;
-                    
-                    item.className = 'flex flex-col items-center p-2 hover:bg-black/10 dark:hover:bg-white/10 text-center rounded relative'; // Added rounded/relative
-                    
-                    let icon = '📄'; // Default file
-                    if (childNode.type === 'directory') {
-                        icon = '📁';
-                    } else if (childNode.type === 'app') {
-                        // --- DYNAMIC APP ICONS ---
-                        const appId = childNode.content;
-                        icon = appConfig[appId] ? appConfig[appId].emoji : '🚀';
-                    } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
-                        icon = '🖼️';
-                    }
-
-                    item.innerHTML = `<div class="text-4xl pointer-events-none">${icon}</div><span class="text-xs mt-1 truncate w-full pointer-events-none">${name}</span>`;
-                    
-                    const fullPath = `${path === '/' ? '' : path}/${name}`;
-                    
-                    // Left click actions
-                    if (childNode.type === 'directory') {
-                        item.onclick = () => renderFileSystem(win, fullPath);
-                    } else if (childNode.type === 'app') {
-                        item.onclick = () => createWindow(childNode.content);
-                    } else if (name.endsWith('.txt') || name.endsWith('.conf')) {
-                        item.onclick = () => openFileInTexts(fullPath);
-                    } else if (['.png', '.jpg', '.jpeg', '.gif'].some(ext => name.endsWith(ext))) {
-                        item.onclick = () => openImageInViewer(fullPath);
-                    } else {
-                        // --- NEW UNKNOWN FILE HANDLER ---
-                        item.onclick = () => {
-                            showModal('Open with...', `How do you want to open "${name}"?`, [
-                                { label: 'Cancel' },
-                                { label: 'Images', class: 'btn-accent', action: () => openImageInViewer(fullPath) },
-                                { label: 'Texts', class: 'btn-accent', action: () => openFileInTexts(fullPath) }
-                            ]);
-                        };
-                        // --- END UNKNOWN FILE HANDLER ---
-                    }
-                    grid.appendChild(item);
-                });
-
-                // Breadcrumbs logic
-                breadcrumbs.innerHTML = '';
-                let currentPathStr = '';
-                const parts = path.split('/').filter(p => p);
-                const rootCrumb = document.createElement('button');
-                rootCrumb.textContent = '/';
-                rootCrumb.className = 'px-2 hover:underline';
-                rootCrumb.dataset.path = '/';
-                breadcrumbs.appendChild(rootCrumb);
-
-                parts.forEach(part => {
-                    currentPathStr += `/${part}`;
-                    breadcrumbs.innerHTML += `<span class="px-1 opacity-50">></span>`;
-                    const partCrumb = document.createElement('button');
-                    partCrumb.textContent = part;
-                    partCrumb.className = 'px-2 hover:underline';
-                    partCrumb.dataset.path = currentPathStr;
-                    breadcrumbs.appendChild(partCrumb);
-                });
-            }
-            
-            function openFileInTexts(path) {
-                const fileNode = getFileSystemNode(path);
-                if (!fileNode || fileNode.type !== 'file') return;
-                
-                // Check if 'texts' app is "installed"
-                if (!checkAppVfsStatus('texts')) {
-                     showModal(
-                        'Application not found', 
-                        `Cannot open "${path.split('/').pop()}" because the "Texts" application is not found.`, 
-                        [{label: 'OK'}]
-                    );
-                    return;
-                }
-                
-                const win = createWindow('texts');
-                if(!win) return; 
-
-                const textarea = win.querySelector('.texts-textarea');
-                textarea.value = fileNode.content;
-                win.dataset.filePath = path;
-                win.dataset.originalContent = fileNode.content;
-                win.querySelector('.title-bar .window-title').textContent = `${path.split('/').pop()} - Texts`;
-            }
-            
-            function openImageInViewer(path) {
-                const fileNode = getFileSystemNode(path);
-                if (!fileNode || fileNode.type !== 'file') return;
-                
-                // Check if 'images' app is "installed"
-                if (!checkAppVfsStatus('images')) {
-                     showModal(
-                        'Application not found', 
-                        `Cannot open "${path.split('/').pop()}" because the "Images" application is not found.`, 
-                        [{label: 'OK'}]
-                    );
-                    return;
-                }
-                
-                const win = createWindow('images');
-                if(!win) return; 
-                // MODIFIED: Removed content check to allow force-parsing
-                win.querySelector('.content-area img').src = fileNode.content; 
-                win.querySelector('.title-bar .window-title').textContent = `${path.split('/').pop()} - Images`;
-            }
-
-            window.saveNotepadFile = (notepadWindow) => {
-                const win = notepadWindow || Object.values(openWindows).find(w => w.element.style.zIndex == zIndexCounter && w.appId === 'texts')?.element;
-                if (!win) return;
-
-                const path = win.dataset.filePath;
-                const textarea = win.querySelector('.texts-textarea');
-                const newContent = textarea.value;
-
-                if (path) { // Existing file
-                    const parts = path.split('/');
-                    const fileName = parts.pop();
-                    const parentPath = parts.join('/') || '/';
-                    const parentNode = getFileSystemNode(parentPath);
-                    if (parentNode && parentNode.children[fileName]) {
-                        parentNode.children[fileName].content = newContent;
-                        win.dataset.originalContent = newContent;
-                        saveVFSToLocalStorage(); // <-- Persist VFS
-                    }
-                } else { // New file
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.placeholder = 'filename.txt';
-                    input.className = 'w-full p-2 border bg-transparent';
-                    showModal('Save As', input, [
-                        { label: 'Cancel' },
-                        { label: 'Save', class: 'btn-accent', action: () => {
-                            let fileName = input.value.trim() || 'Untitled.txt';
-                            if (!fileName.endsWith('.txt')) fileName += '.txt';
-                            const homeNode = getFileSystemNode('/home/user/Documents'); // Save to Documents
-                            homeNode.children[fileName] = { type: 'file', content: newContent };
-                            const newPath = `/home/user/Documents/${fileName}`;
-                            win.dataset.filePath = newPath;
-                            win.dataset.originalContent = newContent;
-                            win.querySelector('.title-bar .window-title').textContent = `${fileName} - Texts`;
-                            saveVFSToLocalStorage(); // <-- Persist VFS
-                        }}
-                    ]);
-                }
-            }
-            
-            // --- New helper function to check VFS for app ---
-            function checkAppVfsStatus(appId) {
-                // --- MODIFIED: 'search' is now a system app ---
-                if (appId === 'preferences' || appId === 'files' || appId === 'search') return true; 
-                
-                const appName = appConfig[appId].title;
-                const appFileName = `${appName}.app`;
-                const appNode = getFileSystemNode(`/home/user/Applications/${appFileName}`);
-                
-                return appNode && appNode.type === 'app' && appNode.content === appId;
-            }
-
-            // --- Window Management ---
-            function createWindow(appId) {
-                if (!appConfig[appId]) return null;
-                
-                // --- SPECIAL CASE FOR SEARCH ---
-                if (appId === 'search') {
-                    // No VFS check needed here anymore
-                    searchMenu.classList.add('show');
-                    setTimeout(() => searchInput.focus(), 200);
-                    performSearch('');
-                    clockFlyout.classList.remove('show');
-                    return null; // Not a window, so return null
-                }
-                // --- END SPECIAL CASE ---
-                
-                // --- VFS App Check ---
-                const isInstalled = checkAppVfsStatus(appId);
-                if (!isInstalled) {
-                    const appName = appConfig[appId].title;
-                    const buttons = [ { label: 'OK' } ]; // Removed "Remove from Start"
-                    showModal('Application not found', `The application "${appName}" (${appName}.app) could not be found in /home/user/Applications.`, buttons);
-                    return null;
-                }
-                // --- End VFS App Check ---
-
-                const config = appConfig[appId];
-
-                if (!config.multiInstance) {
-                    const existing = Object.values(openWindows).find(w => w.appId === appId);
-                    if(existing) {
-                        focusWindow(existing.element);
-                        return existing.element;
-                    }
-                }
-
-                const instanceId = `${appId}-${Date.now()}`;
-                windowCounter++;
-
-                const win = document.createElement('div');
-                win.className = 'window blur-backdrop window-bg opening';
-
-                win.style.width = config.width || '800px';
-                win.style.height = config.height || '600px';
-                win.style.left = `${100 + windowCounter * 20}px`;
-                win.style.top = `${100 + windowCounter * 20}px`;
-                win.dataset.appId = appId;
-                win.dataset.instanceId = instanceId;
-                
-                win.innerHTML = `
-                    <div class="title-bar flex justify-between items-center pl-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-base">${config.emoji}</span>
-                            <span class="window-title text-sm font-medium">${config.title}</span>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_qty">Quantity</label>
+                                <input type="number" id="inp-quantity" value="1" min="1" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white">
+                            </div>
                         </div>
-                        <div class="title-bar-controls flex items-center">
-                            <button class="minimize-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"></line></svg></button>
-                            <button class="maximize-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg></button>
-                            <button class="close-btn"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="3" x2="21" y2="21"></line><line x1="21" y1="3" x2="3" y2="21"></line></svg></button>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_date">Best Before Date</label>
+                                <input type="date" id="inp-date" required class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white">
+                            </div>
+                             <div class="space-y-1">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_price">Price</label>
+                                <input type="number" id="inp-price" step="0.01" min="0" placeholder="0.00" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_note">Notes (Optional)</label>
+                            <textarea id="inp-note" rows="2" placeholder="Brand, store, storage info..." class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 resize-none"></textarea>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="w-full bg-gradient-to-r from-nature-600 to-nature-500 hover:from-nature-700 hover:to-nature-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-nature-500/30 transform transition hover:-translate-y-0.5 active:translate-y-0">
+                                <span data-i18n="btn_register">Register Item</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- AI Scan View -->
+                <div id="view-scan" class="hidden space-y-4">
+                    <!-- API Settings -->
+                    <details class="group bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 text-sm">
+                        <summary class="cursor-pointer font-bold text-slate-500 flex justify-between items-center">
+                            <span>⚙️ AI Configuration</span>
+                            <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </summary>
+                        <div class="mt-3 space-y-3">
+                            <div>
+                                <label class="block mb-1 font-bold text-xs text-slate-400">API Key</label>
+                                <input type="password" id="apiKey" value="sk-F6BSwzZu9hsba8uR0P5FKaaiYMEKpFBG01rLWG2rwyqvmRCQ" class="w-full glass-input px-3 py-2 rounded-lg text-slate-800 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block mb-1 font-bold text-xs text-slate-400">Provider URL</label>
+                                <input type="text" id="apiUrl" value="https://api.chatanywhere.tech/v1/chat/completions" class="w-full glass-input px-3 py-2 rounded-lg text-slate-800 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block mb-1 font-bold text-xs text-slate-400">Model Name</label>
+                                <input type="text" id="modelName" value="gpt-5-mini" class="w-full glass-input px-3 py-2 rounded-lg text-slate-800 dark:text-white">
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- File Upload -->
+                    <div class="relative border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-6 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" id="drop-zone">
+                        <input type="file" id="fileInput" accept="image/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div id="upload-placeholder">
+                            <div class="w-12 h-12 bg-nature-100 dark:bg-nature-900/30 text-nature-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-700 dark:text-slate-300">Tap to Scan Receipt</h3>
+                            <p class="text-xs text-slate-400 mt-1">Supports JPG, PNG (Max 5MB)</p>
+                        </div>
+                        <div id="preview-container" class="hidden relative rounded-lg overflow-hidden max-h-48">
+                            <img id="preview-img" class="w-full object-cover">
+                            <div id="scan-overlay" class="absolute inset-0 hidden">
+                                <div class="scan-line"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="content-area">${config.content}</div>`;
-                
-                const taskbarIcon = document.createElement('button');
-                taskbarIcon.className = 'taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors relative';
-                taskbarIcon.dataset.appId = appId;
-                taskbarIcon.dataset.instanceId = instanceId;
-                taskbarIcon.innerHTML = `<span class="text-xl leading-6">${config.emoji}</span>`;
-                taskbarIcon.onclick = (e) => { 
-                    animateClick(e.currentTarget);
-                    const winData = openWindows[instanceId];
-                    if (!winData) return;
-                    const isFocused = !winData.minimized && winData.element.style.zIndex == zIndexCounter;
-                    if (isFocused) minimizeWindow(winData.element);
-                    else focusWindow(winData.element);
+
+                    <!-- Status -->
+                    <div id="scan-status" class="text-center text-sm font-medium text-slate-500 italic min-h-[20px]"></div>
+
+                    <!-- Scan Results List -->
+                    <div id="scan-results" class="hidden space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800 dark:text-white text-sm">Detected Items</h3>
+                            <span class="text-xs bg-nature-100 text-nature-700 px-2 py-1 rounded-md" id="scan-count">0 items</span>
+                        </div>
+                        <div id="detected-items-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                        <button onclick="app.importScannedItems()" class="w-full bg-nature-600 hover:bg-nature-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-nature-500/30">
+                            Import All Items
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4"></div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        /**
+         * FreshKeep Logic
+         * Uses Classes for modularity and maintainability.
+         */
+
+        // Dictionaries
+        const Translations = {
+            en: {
+                app_title: "FreshKeep",
+                total_inventory: "Total Inventory",
+                good_standing: "In Good Standing",
+                action_required: "Action Required",
+                filters: "Filters",
+                filter_all: "All Items",
+                filter_expiring: "Expiring Soon",
+                filter_expired: "Expired",
+                filter_history: "History / Consumed",
+                sort_by: "Sort By",
+                sort_date_asc: "Date (Soonest First)",
+                sort_date_desc: "Date (Latest First)",
+                sort_name_asc: "Name (A-Z)",
+                sort_category: "Category",
+                empty_title: "Pantry is Empty",
+                empty_desc: "Start tracking your food to reduce waste and save money. Add your first item now!",
+                add_first_item: "Add First Item",
+                load_demo: "Load Demo Data",
+                notifications: "Notifications",
+                clear_all: "Clear all",
+                no_alerts: "No new alerts",
+                add_item: "Add Item",
+                add_provision: "Add Provision",
+                add_desc: "Enter details to track freshness.",
+                label_name: "Product Name",
+                label_category: "Category",
+                label_qty: "Quantity",
+                label_date: "Best Before Date",
+                label_price: "Price",
+                label_note: "Notes (Optional)",
+                btn_register: "Register Item",
+                cat_dairy: "Dairy & Eggs",
+                cat_fruit: "Fruit & Veg",
+                cat_meat: "Meat & Fish",
+                cat_grain: "Grains & Bread",
+                cat_drink: "Beverages",
+                cat_snack: "Snacks",
+                cat_frozen: "Frozen",
+                cat_canned: "Pantry & Canned",
+                cat_condiment: "Condiments",
+                cat_other: "Other",
+                unit: "unit(s)",
+                status_expired: "Expired",
+                status_fresh: "Fresh",
+                status_today: "Expires today",
+                status_warning: "Expires in",
+                days: "days",
+                days_left: "days left",
+                days_ago: "days ago",
+                msg_added: "added successfully!",
+                msg_removed: "Item removed",
+                msg_consumed: "Consumed",
+                msg_fully_consumed: "Fully consumed",
+                undo: "Undo",
+                history_consumed: "Consumed on",
+                history_deleted: "Deleted on"
+            },
+            zh: {
+                app_title: "FreshKeep - 鮮度管家",
+                total_inventory: "庫存總數",
+                good_standing: "狀態良好",
+                action_required: "需要注意",
+                filters: "篩選",
+                filter_all: "所有項目",
+                filter_expiring: "即將過期",
+                filter_expired: "已過期",
+                filter_history: "歷史記錄 / 已消耗",
+                sort_by: "排序方式",
+                sort_date_asc: "日期 (由近到遠)",
+                sort_date_desc: "日期 (由遠到近)",
+                sort_name_asc: "名稱 (A-Z)",
+                sort_category: "類別",
+                empty_title: "庫存是空的",
+                empty_desc: "開始追蹤食物，減少浪費並省錢。立即新增您的第一個項目！",
+                add_first_item: "新增第一個項目",
+                load_demo: "載入範例資料",
+                notifications: "通知",
+                clear_all: "清除全部",
+                no_alerts: "沒有新通知",
+                add_item: "新增項目",
+                add_provision: "新增庫存",
+                add_desc: "輸入詳細資訊以追蹤鮮度。",
+                label_name: "產品名稱",
+                label_category: "類別",
+                label_qty: "數量",
+                label_date: "有效期限",
+                label_price: "價格",
+                label_note: "備註 (選填)",
+                btn_register: "註冊項目",
+                cat_dairy: "乳製品與蛋類",
+                cat_fruit: "水果與蔬菜",
+                cat_meat: "肉類與魚類",
+                cat_grain: "穀物與麵包",
+                cat_drink: "飲料",
+                cat_snack: "零食",
+                cat_frozen: "冷凍食品",
+                cat_canned: "罐頭與乾貨",
+                cat_condiment: "調味品",
+                cat_other: "其他",
+                unit: "個",
+                status_expired: "已過期",
+                status_fresh: "新鮮",
+                status_today: "今天過期",
+                status_warning: "還有",
+                days: "天",
+                days_left: "天過期",
+                days_ago: "天前過期",
+                msg_added: "新增成功！",
+                msg_removed: "項目已移除",
+                msg_consumed: "已消耗",
+                msg_fully_consumed: "已完全消耗",
+                undo: "復原",
+                history_consumed: "消耗於",
+                history_deleted: "刪除於"
+            }
+        };
+
+        // Utility Functions
+        const Utils = {
+            generateId: () => Math.random().toString(36).substr(2, 9),
+            
+            formatDate: (dateStr, lang) => {
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                // Use zh-TW for zh, en-US for en
+                const locale = lang === 'zh' ? 'zh-TW' : 'en-US';
+                return new Date(dateStr).toLocaleDateString(locale, options);
+            },
+
+            getDaysRemaining: (dateStr) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const target = new Date(dateStr);
+                target.setHours(0, 0, 0, 0);
+                const diffTime = target - today;
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            },
+
+            getStatus: (days) => {
+                if (days < 0) return 'expired';
+                if (days === 0) return 'today';
+                if (days <= 3) return 'warning';
+                return 'fresh';
+            },
+
+            getCategoryIcon: (cat) => {
+                const map = {
+                    'dairy': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>',
+                    'fruit': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M4.93 4.93l1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path><path d="M4.93 19.07l1.41-1.41"></path><path d="M17.66 6.34l1.41-1.41"></path></svg>',
+                    'meat': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 3v12h-5c-.001-.265.05-1.05-.5-1.5c-1.5-1.5-4-1.5-5.5 0S6.5 13.5 6 15c-.5.5-.499 1.235-.5 1.5H1v4h22v-4h-2.5c-1 0-2-.5-2.5-1.5l-2.5-2.5"></path></svg>',
+                    'grain': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 8a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v12H6Z"></path><path d="M2 12h20"></path><path d="M10 4v4"></path><path d="M14 4v4"></path></svg>',
+                    'drink': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 5V3H7v2c0 2.21 2.5 4 4.5 4H12c2 0 4.5-1.79 4.5-4Z"></path><path d="M17 11h-1v-2h1c1 0 2 .9 2 2v6c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2v-6c0-1.1.9-2 2-2h1v2H7"></path></svg>',
+                    'snack': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>',
+                    'frozen': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v18m-9-9h18m-2.5-6.5l-13 13m0-13l13 13"></path></svg>',
+                    'canned': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h16v4m-16 0v12a2 2 0 002 2h12a2 2 0 002-2V8m-16 0h16"></path></svg>',
+                    'condiment': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>',
+                    'other': '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>'
                 };
-                taskbarApps.appendChild(taskbarIcon);
-                
-                desktop.appendChild(win);
-                openWindows[instanceId] = { appId, element: win, minimized: false, taskbarIcon };
-                
-                if (appId === 'preferences') {
-                    const checkbox = win.querySelector('#dark-mode-checkbox');
-                    if (checkbox) checkbox.checked = document.body.classList.contains('dark');
-                    
-                    const resetBtn = win.querySelector('#reset-vfs-btn');
-                    if (resetBtn) {
-                        resetBtn.onclick = () => {
-                            showModal('Reset File System?', 
-                                'All files and folders will be reset. This will restore any missing apps.',
-                                [
-                                    { label: 'Cancel' },
-                                    { label: 'Reset', class: 'btn-danger', action: () => {
-                                        fileSystem = JSON.parse(JSON.stringify(defaultFileSystem));
-                                        populateDefaultApps(); // Re-populate .app files
-                                        saveVFSToLocalStorage();
-                                        
-                                        // Removed hidden apps & tile layout reset
-                                        
-                                        // Refresh any open 'Files' windows
-                                        Object.values(openWindows).forEach(w => {
-                                            if (w.appId === 'files') {
-                                                renderFileSystem(w.element, w.element.dataset.currentPath || '/');
-                                            }
-                                        });
-                                    }}
-                                ]
-                            );
-                        };
-                    }
-                } else if (appId === 'files') {
-                    renderFileSystem(win, '/');
-                    win.querySelector('.files-sidebar').addEventListener('click', (e) => {
-                        if (e.target.tagName === 'BUTTON' && e.target.dataset.path) {
-                            renderFileSystem(win, e.target.dataset.path);
-                        }
-                    });
-                    win.querySelector('.files-breadcrumbs').addEventListener('click', (e) => {
-                        if (e.target.tagName === 'BUTTON' && e.target.dataset.path) {
-                            renderFileSystem(win, e.target.dataset.path);
-                        }
-                    });
-                } else if (appId === 'texts') {
-                    win.dataset.originalContent = win.querySelector('.texts-textarea').value;
-                } else if (appId === 'colors') {
-                    initColorsApp(win);
-                } else if (appId === 'zdeupload') {
-                    initZDevUpload(win);
-                } else if (appId === 'minesweeper') {
-                    initMinesweeperApp(win);
-                }
-
-                setupWindowInteractions(win);
-                focusWindow(win);
-
-                requestAnimationFrame(() => win.classList.remove('opening'));
-                return win;
+                return map[cat] || map['other'];
             }
-            
-            function closeWindow(win, force = false) {
-                const instanceId = win.dataset.instanceId;
-                const appId = win.dataset.appId;
-                if (!win || !openWindows[instanceId]) return;
-                
-                if (openWindows[instanceId].resizeObserver) {
-                    openWindows[instanceId].resizeObserver.disconnect();
-                }
+        };
 
-                const doClose = () => {
-                    win.classList.add('closing');
-                    win.addEventListener('animationend', () => {
-                         if (openWindows[instanceId]) {
-                            openWindows[instanceId].taskbarIcon.remove();
-                            delete openWindows[instanceId];
-                         }
-                         if (win.parentElement) win.remove();
-                    }, {once: true});
+        // Notification Service
+        class NotificationService {
+            constructor(appInstance) {
+                this.app = appInstance;
+                this.alerts = [];
+                this.badge = document.getElementById('notification-badge');
+                this.list = document.getElementById('notification-list');
+                this.container = document.getElementById('toast-container');
+                this.isOpen = false;
+
+                document.getElementById('notification-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleDropdown();
+                });
+                
+                document.addEventListener('click', (e) => {
+                    const dropdown = document.getElementById('notification-dropdown');
+                    const btn = document.getElementById('notification-btn');
+                    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                        this.isOpen = false;
+                    }
+                });
+            }
+
+            addAlert(item, type) {
+                const alert = {
+                    id: Utils.generateId(),
+                    item: item,
+                    type: type,
+                    timestamp: new Date()
                 };
-                
-                if (appId === 'texts' && !force) {
-                    const textarea = win.querySelector('.texts-textarea');
-                    const isDirty = textarea.value !== win.dataset.originalContent;
-                    if (isDirty) {
-                        showModal('Save changes?', 'Do you want to save your changes before closing?', [
-                            {label: "Don't Save", action: doClose},
-                            {label: "Cancel"},
-                            {label: "Save", class: 'btn-accent', action: () => { saveNotepadFile(win); doClose(); }},
-                        ]);
-                        return;
-                    }
-                }
-                
-                doClose();
+                this.alerts.unshift(alert);
+                this.updateBadge();
+                this.renderDropdown();
             }
 
-            function setupWindowInteractions(win) {
-                const titleBar = win.querySelector('.title-bar');
-                
-                titleBar.addEventListener('mousedown', (e) => {
-                    if (e.target.closest('button') || win.classList.contains('maximized')) return;
-                    
-                    e.preventDefault();
-                    
-                    let isDragging = true;
-                    const startX = e.clientX;
-                    const startY = e.clientY;
-                    const initialLeft = win.offsetLeft;
-                    const initialTop = win.offsetTop;
-                    
-                    titleBar.style.cursor = 'grabbing';
-                    focusWindow(win);
+            updateBadge() {
+                if (this.alerts.length > 0) {
+                    this.badge.classList.remove('hidden');
+                } else {
+                    this.badge.classList.add('hidden');
+                }
+            }
 
-                    const onMouseMove = (e) => {
-                        if (!isDragging) return;
-                        const dx = e.clientX - startX;
-                        const dy = e.clientY - startY;
-                        
-                        win.style.left = `${initialLeft + dx}px`;
-                        win.style.top = `${initialTop + dy}px`;
-                    };
+            toggleDropdown() {
+                const dropdown = document.getElementById('notification-dropdown');
+                this.isOpen = !this.isOpen;
+                if (this.isOpen) {
+                    dropdown.classList.remove('hidden');
+                    this.renderDropdown();
+                } else {
+                    dropdown.classList.add('hidden');
+                }
+            }
 
-                    const onMouseUp = () => {
-                        isDragging = false;
-                        titleBar.style.cursor = 'move';
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                    };
+            renderDropdown() {
+                const t = Translations[this.app.lang];
+                if (this.alerts.length === 0) {
+                    this.list.innerHTML = `<li class="text-center text-sm text-slate-400 py-4">${t.no_alerts}</li>`;
+                    return;
+                }
 
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
-                });
-
-                win.querySelector('.close-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    closeWindow(win);
-                });
-
-                win.querySelector('.minimize-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    minimizeWindow(win);
-                });
-
-                win.querySelector('.maximize-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    win.classList.add('transitioning');
-                    
-                    setTimeout(() => {
-                        win.classList.remove('transitioning');
-                    }, 250);
-
-                    if (win.classList.contains('maximized')) {
-                        win.classList.remove('maximized');
-                        win.style.width = win.dataset.originalWidth;
-                        win.style.height = win.dataset.originalHeight;
-                        win.style.left = win.dataset.originalLeft;
-                        win.style.top = win.dataset.originalTop;
-                        win.style.resize = 'both';
+                this.list.innerHTML = this.alerts.map(alert => {
+                    let msg = '';
+                    const days = Utils.getDaysRemaining(alert.item.expiryDate);
+                    if (alert.type === 'expired') {
+                        msg = `<b>${alert.item.name}</b> ${t.status_expired} ${t.status_today}`; 
                     } else {
-                        win.dataset.originalWidth = win.style.width;
-                        win.style.height = win.style.height;
-                        win.dataset.originalLeft = win.style.left;
-                        win.dataset.originalTop = win.style.top;
-                        win.classList.add('maximized');
-                        win.style.resize = 'none';
+                        msg = `<b>${alert.item.name}</b> ${t.status_warning} ${days} ${t.days}`;
                     }
-                });
+
+                    return `
+                    <li class="p-3 mb-2 rounded-lg bg-white dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600 shadow-sm flex gap-3 items-start">
+                        <div class="mt-1 w-2 h-2 rounded-full ${alert.type === 'expired' ? 'bg-red-500' : 'bg-orange-500'} flex-shrink-0"></div>
+                        <div>
+                            <p class="text-sm text-slate-700 dark:text-slate-200">${msg}</p>
+                            <span class="text-xs text-slate-400 block mt-1">${alert.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                    </li>
+                `}).join('');
+            }
+
+            clear() {
+                this.alerts = [];
+                this.updateBadge();
+                this.renderDropdown();
+            }
+
+            showToast(message, type = 'success', undoCallback = null) {
+                const t = Translations[this.app.lang];
+                const toastId = 'toast-' + Utils.generateId();
+                const toast = document.createElement('div');
+                const colors = type === 'success' ? 'bg-nature-600' : (type === 'info' ? 'bg-slate-700' : 'bg-danger-500');
                 
-                win.addEventListener('mousedown', () => focusWindow(win), true);
-            }
-            
-            function focusWindow(win) {
-                const instanceId = win.dataset.instanceId;
-                if (openWindows[instanceId] && openWindows[instanceId].minimized) {
-                    win.classList.remove('minimized');
-                    openWindows[instanceId].minimized = false;
+                let undoHtml = '';
+                if (undoCallback) {
+                    undoHtml = `
+                        <button id="undo-${toastId}" class="ml-auto bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition-colors">
+                            ${t.undo}
+                        </button>
+                    `;
                 }
-                zIndexCounter++;
-                win.style.zIndex = zIndexCounter;
-                
-                document.querySelectorAll('#taskbar-apps .taskbar-item').forEach(icon => icon.classList.remove('active'));
-                if (openWindows[instanceId]) {
-                    openWindows[instanceId].taskbarIcon.classList.add('active');
-                }
-            }
 
-            function minimizeWindow(win) {
-                const instanceId = win.dataset.instanceId;
-                if(openWindows[instanceId]) {
-                    win.classList.add('minimized');
-                    openWindows[instanceId].minimized = true;
-                    openWindows[instanceId].taskbarIcon.classList.remove('active');
-                }
-            }
-            
-            function pinApp(appId) {
-                if (appConfig[appId] && !pinnedApps.has(appId)) {
-                    pinnedApps.add(appId);
-                    renderPinnedApps();
-                }
-            }
-            function unPinApp(appId) {
-                if (pinnedApps.has(appId)) {
-                    pinnedApps.delete(appId);
-                    renderPinnedApps();
-                }
-            }
+                toast.id = toastId;
+                toast.className = `pointer-events-auto flex items-center gap-3 ${colors} text-white px-5 py-4 rounded-xl shadow-xl transform transition-all duration-300 translate-y-20 opacity-0 w-full`;
+                toast.innerHTML = `
+                    <div class="flex items-center gap-2 flex-grow">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'success' ? 'M5 13l4 4L19 7' : 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'}"></path></svg>
+                        <span class="font-medium text-sm">${message}</span>
+                    </div>
+                    ${undoHtml}
+                `;
 
-            function renderPinnedApps() {
-                pinnedAppsContainer.innerHTML = '';
-                pinnedApps.forEach(appId => {
-                    const config = appConfig[appId];
-                    if (!config) {
-                        console.warn(`Config for pinned app "${appId}" not found. Removing.`);
-                        pinnedApps.delete(appId);
-                        return;
-                    }
-                    const btn = document.createElement('button');
-                    btn.className = 'app-launcher taskbar-item p-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors';
-                    btn.dataset.appId = appId;
-                    btn.innerHTML = `<span class="text-xl leading-6">${config.emoji}</span>`;
-                    btn.onclick = (e) => { 
-                        animateClick(e.currentTarget);
-                        setTimeout(() => createWindow(appId), 100);
-                    };
-                    pinnedAppsContainer.appendChild(btn);
-                });
-            }
-            
-            // --- renderStartMenu is removed ---
-            
-            // --- New helper function to find all app IDs in a VFS node (recursive) ---
-            function findAppIdsRecursive(node) {
-                let ids = [];
-                if (!node) return ids; // Safety check
+                this.container.appendChild(toast);
 
-                if (node.type === 'app') {
-                    // Check if it's a valid app ID
-                    if (appConfig[node.content]) {
-                        ids.push(node.content);
-                    }
-                } else if (node.type === 'directory' && node.children) {
-                    Object.values(node.children).forEach(child => {
-                        ids = ids.concat(findAppIdsRecursive(child));
+                if (undoCallback) {
+                    document.getElementById(`undo-${toastId}`).addEventListener('click', () => {
+                        undoCallback();
+                        toast.classList.add('opacity-0', 'translate-y-2'); // Fade out immediate
+                        setTimeout(() => toast.remove(), 300);
                     });
                 }
-                return ids;
-            }
 
-            // App initializers
-            function initColorsApp(win) {
-                const canvas = win.querySelector('.colors-canvas');
-                const contentArea = win.querySelector('.content-area');
-                const toolbar = win.querySelector('.colors-toolbar');
-                const ctx = canvas.getContext('2d');
-                let isDrawing = false;
-                let lastX = 0;
-                let lastY = 0;
-                
-                function resizeCanvas() {
-                    const oldContent = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = canvas.offsetHeight;
-                    
-                    ctx.putImageData(oldContent, 0, 0);
-
-                    const activeColor = toolbar.querySelector('.color-swatch.active')?.dataset.color || '#000000';
-                    ctx.strokeStyle = activeColor;
-                    ctx.lineWidth = 2;
-                    ctx.lineJoin = 'round';
-                    ctx.lineCap = 'round';
-                }
-                
-                requestAnimationFrame(resizeCanvas);
-                
-                const resizeObserver = new ResizeObserver(resizeCanvas);
-                resizeObserver.observe(contentArea);
-                
-                const instanceId = win.dataset.instanceId;
-                if(openWindows[instanceId]) {
-                    openWindows[instanceId].resizeObserver = resizeObserver;
-                }
-                
-                toolbar.addEventListener('click', (e) => {
-                    if (e.target.dataset.color) {
-                        ctx.strokeStyle = e.target.dataset.color;
-                        toolbar.querySelector('.color-swatch.active').classList.remove('active');
-                        e.target.classList.add('active');
-                    }
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-y-20', 'opacity-0');
                 });
 
-                canvas.addEventListener('mousedown', (e) => { isDrawing = true; [lastX, lastY] = [e.offsetX, e.offsetY]; });
-                canvas.addEventListener('mousemove', (e) => {
-                    if (!isDrawing) return;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX, lastY);
-                    ctx.lineTo(e.offsetX, e.offsetY);
-                    ctx.stroke();
-                    [lastX, lastY] = [e.offsetX, e.offsetY];
-                });
-                canvas.addEventListener('mouseup', () => isDrawing = false);
-                canvas.addEventListener('mouseleave', () => isDrawing = false);
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        toast.classList.add('translate-y-20', 'opacity-0');
+                        setTimeout(() => toast.remove(), 300);
+                    }
+                }, 4000);
+            }
+        }
+
+        // Main App Class
+        class App {
+            constructor() {
+                this.lang = 'zh'; // Default Language Traditional Chinese
+                this.items = [];
+                this.history = []; 
+                this.currentFilter = 'all';
+                this.currentSort = 'date-asc';
+                this.notif = new NotificationService(this);
+                this.scannedItems = []; // Temp storage for AI scan
+                
+                document.getElementById('inp-date').valueAsDate = new Date();
+                this.updateDateDisplay();
+                this.initTheme();
+                this.updateUIText(); // Apply initial language
+
+                // Setup File Input Listener
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileScan(e));
             }
 
-            function initZDevUpload(win) {
-                const uploader = win.querySelector('#file-uploader');
-                uploader.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-
-                    const reader = new FileReader();
-                    const downloadsNode = getFileSystemNode('/home/user/Downloads');
-                    
-                    if (file.type.startsWith('image/')) {
-                        reader.onload = (event) => {
-                            downloadsNode.children[file.name] = { type: 'file', content: event.target.result };
-                            saveVFSToLocalStorage();
-                            openImageInViewer(`/home/user/Downloads/${file.name}`);
-                        };
-                        reader.readAsDataURL(file);
-                    } else if (file.type === 'text/plain') {
-                        reader.onload = (event) => {
-                            downloadsNode.children[file.name] = { type: 'file', content: event.target.result };
-                            saveVFSToLocalStorage();
-                            openFileInTexts(`/home/user/Downloads/${file.name}`);
-                        };
-                        reader.readAsText(file);
-                    } else {
-                        showModal('Unsupported File', 'This file type is not supported.', [{label: 'OK'}]);
-                    }
-                    closeWindow(win, true);
-                });
+            updateDateDisplay() {
+                const locale = this.lang === 'zh' ? 'zh-TW' : 'en-US';
+                document.getElementById('current-date').innerText = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             }
 
-            function initMinesweeperApp(win) {
-                const GRID_SIZE = 9;
-                const NUM_MINES = 10;
-
-                const grid = win.querySelector('#minesweeper-grid');
-                const mineCountDisplay = win.querySelector('#mine-count');
-                const timerDisplay = win.querySelector('#timer');
-                const resetBtn = win.querySelector('#reset-game');
-
-                let board = [];
-                let mineLocations = [];
-                let flagsPlaced = 0;
-                let timerInterval;
-                let time = 0;
-                let gameOver = false;
-                let firstClick = true;
-
-                function createBoard() {
-                    board = Array.from({ length: GRID_SIZE }, () => 
-                        Array.from({ length: GRID_SIZE }, () => ({
-                            isMine: false,
-                            isRevealed: false,
-                            isFlagged: false,
-                            adjacentMines: 0
-                        }))
-                    );
-                    
-                    grid.innerHTML = '';
-                    grid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
-                    grid.style.gridTemplateRows = `repeat(${GRID_SIZE}, 1fr)`;
-
-                    for (let r = 0; r < GRID_SIZE; r++) {
-                        for (let c = 0; c < GRID_SIZE; c++) {
-                            const cell = document.createElement('div');
-                            cell.className = 'minesweeper-cell';
-                            cell.dataset.row = r;
-                            cell.dataset.col = c;
-                            grid.appendChild(cell);
-                        }
-                    }
-                }
-
-                function plantMines(firstRow, firstCol) {
-                    mineLocations = [];
-                    let minesToPlant = NUM_MINES;
-
-                    while (minesToPlant > 0) {
-                        const r = Math.floor(Math.random() * GRID_SIZE);
-                        const c = Math.floor(Math.random() * GRID_SIZE);
-
-                        if ((r === firstRow && c === firstCol) || board[r][c].isMine) {
-                            continue;
-                        }
-
-                        board[r][c].isMine = true;
-                        mineLocations.push({r, c});
-                        minesToPlant--;
-                    }
-
-                    for (let r = 0; r < GRID_SIZE; r++) {
-                        for (let c = 0; c < GRID_SIZE; c++) {
-                            if (board[r][c].isMine) continue;
-                            board[r][c].adjacentMines = countAdjacentMines(r, c);
-                        }
-                    }
-                }
-
-                function countAdjacentMines(row, col) {
-                    let count = 0;
-                    for (let rOffset = -1; rOffset <= 1; rOffset++) {
-                        for (let cOffset = -1; cOffset <= 1; cOffset++) {
-                            if (rOffset === 0 && cOffset === 0) continue;
-                            const nr = row + rOffset;
-                            const nc = col + cOffset;
-                            if (isValidCell(nr, nc) && board[nr][nc].isMine) {
-                                count++;
-                            }
-                        }
-                    }
-                    return count;
-                }
-
-                function isValidCell(r, c) {
-                    return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE;
-                }
-
-                function startTimer() {
-                    if (timerInterval) clearInterval(timerInterval);
-                    time = 0;
-                    timerDisplay.textContent = time;
-                    timerInterval = setInterval(() => {
-                        time++;
-                        timerDisplay.textContent = time;
-                    }, 1000);
-                }
-
-                function stopTimer() {
-                    clearInterval(timerInterval);
-                }
-
-                function handleCellClick(e) {
-                    if (gameOver) return;
-                    
-                    const cellEl = e.target.closest('.minesweeper-cell');
-                    if (!cellEl) return;
-
-                    const row = parseInt(cellEl.dataset.row);
-                    const col = parseInt(cellEl.dataset.col);
-                    const cellData = board[row][col];
-
-                    if (cellData.isRevealed || cellData.isFlagged) return;
-
-                    if (firstClick) {
-                        plantMines(row, col);
-                        startTimer();
-                        firstClick = false;
-                    }
-
-                    if (cellData.isMine) {
-                        endGame(false);
-                        cellEl.classList.add('mine');
-                    } else {
-                        revealCell(row, col);
-                        checkWin();
-                    }
-                }
-
-                function handleCellRightClick(e) {
-                    e.preventDefault();
-                    if (gameOver) return;
-
-                    const cellEl = e.target.closest('.minesweeper-cell');
-                    if (!cellEl) return;
-
-                    const row = parseInt(cellEl.dataset.row);
-                    const col = parseInt(cellEl.dataset.col);
-                    const cellData = board[row][col];
-
-                    if (cellData.isRevealed) return;
-
-                    cellData.isFlagged = !cellData.isFlagged;
-                    if (cellData.isFlagged) {
-                        cellEl.textContent = '🚩';
-                        flagsPlaced++;
-                    } else {
-                        cellEl.textContent = '';
-                        flagsPlaced--;
-                    }
-                    mineCountDisplay.textContent = NUM_MINES - flagsPlaced;
-                }
-
-                function revealCell(r, c) {
-                    if (!isValidCell(r, c) || board[r][c].isRevealed) return;
-
-                    const cellData = board[r][c];
-                    const cellEl = grid.children[r * GRID_SIZE + c];
-
-                    if (cellData.isFlagged) return;
-
-                    cellData.isRevealed = true;
-                    cellEl.classList.add('revealed');
-
-                    if (cellData.adjacentMines > 0) {
-                        cellEl.textContent = cellData.adjacentMines;
-                        cellEl.dataset.adjacent = cellData.adjacentMines;
-                    } else {
-                        for (let rOffset = -1; rOffset <= 1; rOffset++) {
-                            for (let cOffset = -1; cOffset <= 1; cOffset++) {
-                                if (rOffset === 0 && cOffset === 0) continue;
-                                revealCell(r + rOffset, c + cOffset);
-                            }
-                        }
-                    }
-                }
-
-                function endGame(isWin) {
-                    gameOver = true;
-                    stopTimer();
-                    resetBtn.textContent = isWin ? '😎' : '😵';
-
-                    mineLocations.forEach(({r, c}) => {
-                        const cellEl = grid.children[r * GRID_SIZE + c];
-                        if (!board[r][c].isRevealed && !isWin) {
-                            cellEl.classList.add('revealed');
-                            cellEl.textContent = '💣';
-                        }
-                        if (board[r][c].isFlagged && !board[r][c].isMine) {
-                             cellEl.style.backgroundColor = 'yellow';
-                        }
-                    });
-                }
-                
-                function checkWin() {
-                    let revealedCount = 0;
-                    for (let r = 0; r < GRID_SIZE; r++) {
-                        for (let c = 0; c < GRID_SIZE; c++) {
-                            if (board[r][c].isRevealed) {
-                                revealedCount++;
-                            }
-                        }
-                    }
-                    if (revealedCount === (GRID_SIZE * GRID_SIZE) - NUM_MINES) {
-                        endGame(true);
-                    }
-                }
-
-                function resetGame() {
-                    gameOver = false;
-                    firstClick = true;
-                    flagsPlaced = 0;
-                    time = 0;
-                    stopTimer();
-                    mineCountDisplay.textContent = NUM_MINES;
-                    timerDisplay.textContent = 0;
-                    resetBtn.textContent = '🙂';
-                    createBoard();
-                }
-                
-                createBoard();
-                mineCountDisplay.textContent = NUM_MINES;
-                timerDisplay.textContent = 0;
-                
-                grid.addEventListener('click', handleCellClick);
-                grid.addEventListener('contextmenu', handleCellRightClick);
-                resetBtn.addEventListener('click', resetGame);
+            toggleLang() {
+                this.lang = this.lang === 'en' ? 'zh' : 'en';
+                document.getElementById('lang-display').innerText = this.lang === 'en' ? 'EN' : '繁中';
+                this.updateUIText();
+                this.updateDateDisplay();
+                this.render(); 
             }
 
-            // --- File System Operations ---
-            function deleteFileItem(win, filename) {
-                const currentPath = win.dataset.currentPath;
-                const parentNode = getFileSystemNode(currentPath);
-                
-                // --- Prevent Deletion of SearchExperience.app ---
-                // (No longer needed, it's not in the VFS)
-                // if (filename === 'SearchExperience.app') { ... }
-                
-                if (parentNode && parentNode.children[filename]) {
-                    showModal('Delete Item', `Are you sure you want to delete "${filename}"?`, [
-                        { label: 'Cancel' },
-                        { label: 'Delete', class: 'btn-danger', action: () => {
-                            const itemToDelete = parentNode.children[filename];
-                            
-                            // --- App Deletion Logic ---
-                            const appIdsToClose = findAppIdsRecursive(itemToDelete);
-                            
-                            // --- NEW START MENU CLOSE LOGIC ---
-                            // (No longer needed, 'search' isn't in VFS)
-                            // if (appIdsToClose.includes('search')) { ... }
-                            // --- END NEW LOGIC ---
-
-                            if (appIdsToClose.length > 0) {
-                                console.log("Closing instances for deleted apps:", appIdsToClose);
-                                Object.values(openWindows).forEach(w => {
-                                    if (appIdsToClose.includes(w.appId)) {
-                                        closeWindow(w.element, true); // Force close
-                                    }
-                                });
-                            }
-                            // --- End App Deletion Logic ---
-
-                            delete parentNode.children[filename];
-                            saveVFSToLocalStorage();
-                            renderFileSystem(win, currentPath);
-                        }}
-                    ]);
-                }
-            }
-
-            function renameFileItem(win, oldName) {
-                const currentPath = win.dataset.currentPath;
-                const parentNode = getFileSystemNode(currentPath);
-                
-                if (!parentNode) return;
-                
-                // --- Prevent Renaming of SearchExperience.app ---
-                // (No longer needed)
-                // if (oldName === 'SearchExperience.app') { ... }
-
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.value = oldName;
-                input.className = 'w-full p-2 border bg-transparent';
-                
-                showModal('Rename', input, [
-                    { label: 'Cancel' },
-                    { label: 'Rename', class: 'btn-accent', action: () => {
-                        const newName = input.value.trim();
-                        if (!newName || newName === oldName) return;
-                        
-                        if (parentNode.children[newName]) {
-                            showModal('Error', 'An item with that name already exists.', [{label: 'OK'}]);
-                            return false; // Don't close modal
-                        }
-                        
-                        parentNode.children[newName] = parentNode.children[oldName];
-                        delete parentNode.children[oldName];
-                        
-                        saveVFSToLocalStorage();
-                        renderFileSystem(win, currentPath);
-                    }}
-                ]);
-            }
-
-            function createNewItem(win, type) {
-                const currentPath = win.dataset.currentPath;
-                const parentNode = getFileSystemNode(currentPath);
-                if (!parentNode) return;
-
-                const input = document.createElement('input');
-                const defaultName = type === 'directory' ? 'New Folder' : 'New Text.txt';
-                input.type = 'text';
-                input.value = defaultName;
-                input.className = 'w-full p-2 border bg-transparent';
-                
-                setTimeout(() => input.select(), 50);
-
-                showModal(type === 'directory' ? 'Create Folder' : 'Create File', input, [
-                    { label: 'Cancel' },
-                    { label: 'Create', class: 'btn-accent', action: () => {
-                        let newName = input.value.trim();
-                        if (!newName) {
-                            newName = defaultName;
-                        }
-                        
-                        if (parentNode.children[newName]) {
-                            showModal('Error', 'An item with that name already exists.', [{label: 'OK'}]);
-                            return false; // Don't close modal
-                        }
-
-                        if (type === 'directory') {
-                            parentNode.children[newName] = { type: 'directory', children: {} };
+            updateUIText() {
+                const t = Translations[this.lang];
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (t[key]) {
+                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                            el.placeholder = t[key];
                         } else {
-                            let finalName = newName;
-                            if (!finalName.includes('.')) finalName += '.txt';
-                            parentNode.children[finalName] = { type: 'file', content: '' };
+                            el.innerText = t[key];
                         }
-                        saveVFSToLocalStorage();
-                        renderFileSystem(win, currentPath);
-                    }}
-                ]);
+                    }
+                });
+                const select = document.getElementById('inp-category');
+                Array.from(select.options).forEach(opt => {
+                    const key = 'cat_' + opt.value;
+                    if(t[key]) opt.text = t[key];
+                });
             }
 
-            // --- Initial Render ---
-            applyInitialTheme();
-            initializeVFS();
-            // loadHiddenApps(); // Removed
-            // loadTileConfig(); // Removed
-            renderPinnedApps();
-            // renderStartMenu(); // Removed
-            // createWindow('preferences'); // Not auto-opening preferences anymore
-        });
-    </script>
+            initTheme() {
+                const toggleBtn = document.getElementById('theme-toggle');
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+                toggleBtn.addEventListener('click', () => {
+                    document.documentElement.classList.toggle('dark');
+                });
+            }
 
+            addItem(item, isUndo = false) {
+                if (!isUndo) {
+                    // Try to find an identical existing item to merge
+                    const existingItem = this.items.find(i => 
+                        i.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
+                        i.category === item.category &&
+                        i.expiryDate.split('T')[0] === item.expiryDate.split('T')[0] && // Compare date part of ISO string
+                        i.price === item.price
+                    );
+
+                    if (existingItem) {
+                        existingItem.quantity = Number(existingItem.quantity) + Number(item.quantity);
+                        this.processNotifications(existingItem);
+                        this.notif.showToast(`${item.name} quantity updated (+${item.quantity})`);
+                        this.render();
+                        return;
+                    }
+                }
+
+                this.items.push(item);
+                if (!isUndo) {
+                    this.processNotifications(item);
+                    this.notif.showToast(`${item.name} ${Translations[this.lang].msg_added}`);
+                }
+                this.render();
+            }
+
+            consumeItem(id) {
+                const itemIndex = this.items.findIndex(i => i.id === id);
+                if (itemIndex === -1) return;
+                const item = this.items[itemIndex];
+                const t = Translations[this.lang];
+
+                // Always record 1 unit consumed history regardless of total qty
+                this.addToHistory(item, 'consumed', 1);
+
+                if (item.quantity > 1) {
+                    item.quantity--;
+                    this.render();
+                    this.notif.showToast(`1 ${t.unit} ${item.name} ${t.msg_consumed}`, 'success');
+                } else {
+                    this.items.splice(itemIndex, 1);
+                    this.render();
+                    this.notif.showToast(
+                        `${item.name} ${t.msg_fully_consumed}`, 
+                        'success', 
+                        () => this.undoAction(item)
+                    );
+                }
+            }
+
+            deleteItem(id) {
+                const itemIndex = this.items.findIndex(i => i.id === id);
+                if (itemIndex === -1) return;
+                const item = this.items[itemIndex];
+                this.items.splice(itemIndex, 1);
+                this.addToHistory(item, 'deleted');
+                this.render();
+                const t = Translations[this.lang];
+                this.notif.showToast(
+                    `${t.msg_removed}`, 
+                    'info',
+                    () => this.undoAction(item)
+                );
+            }
+
+            addToHistory(item, action, qty = 0) {
+                this.history.unshift({
+                    ...item,
+                    quantity: qty > 0 ? qty : item.quantity,
+                    action: action,
+                    actionDate: new Date()
+                });
+            }
+
+            undoAction(item) {
+                this.items.push(item);
+                if (this.history.length > 0 && this.history[0].id === item.id) {
+                    this.history.shift();
+                }
+                this.render();
+            }
+
+            processNotifications(item) {
+                const days = Utils.getDaysRemaining(item.expiryDate);
+                if (days <= 3 && days >= 0) {
+                    this.notif.addAlert(item, 'warning');
+                } else if (days < 0) {
+                    this.notif.addAlert(item, 'expired');
+                }
+            }
+
+            clearNotifications() {
+                this.notif.clear();
+            }
+
+            loadMockData() {
+                const mockItems = [
+                    { id: '1', name: '希臘優格', category: 'dairy', expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), quantity: 2, price: 4.50, note: '低脂' },
+                    { id: '2', name: '雞胸肉', category: 'meat', expiryDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), quantity: 1, price: 8.99, note: '如不使用請冷凍' },
+                    { id: '3', name: '酪梨', category: 'fruit', expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), quantity: 3, price: 1.25, note: '熟' },
+                    { id: '4', name: '酸種麵包', category: 'grain', expiryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), quantity: 1, price: 5.49, note: '' },
+                    { id: '5', name: '柳橙汁', category: 'drink', expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), quantity: 1, price: 3.99, note: '未開封' },
+                    { id: '6', name: '罐裝黑豆', category: 'canned', expiryDate: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000).toISOString(), quantity: 4, price: 0.99, note: '' },
+                    { id: '7', name: '醬油', category: 'condiment', expiryDate: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString(), quantity: 1, price: 6.50, note: '' },
+                ];
+                
+                this.items = []; 
+                mockItems.forEach(i => {
+                    this.items.push(i);
+                    this.processNotifications(i);
+                });
+                this.render();
+                this.notif.showToast(this.lang === 'en' ? 'Demo data loaded' : '範例資料已載入');
+            }
+
+            setFilter(filter) {
+                this.currentFilter = filter;
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-slate-100', 'dark:bg-slate-800'));
+                const btns = document.querySelectorAll('.filter-btn');
+                if (filter === 'all') btns[0].classList.add('bg-slate-100', 'dark:bg-slate-800');
+                if (filter === 'expiring') btns[1].classList.add('bg-slate-100', 'dark:bg-slate-800');
+                if (filter === 'expired') btns[2].classList.add('bg-slate-100', 'dark:bg-slate-800');
+                if (filter === 'history') btns[3].classList.add('bg-slate-100', 'dark:bg-slate-800');
+                this.render();
+            }
+
+            sortItems(criteria) {
+                this.currentSort = criteria;
+                this.render();
+            }
+
+            getFilteredAndSortedItems() {
+                if (this.currentFilter === 'history') return [...this.history]; 
+
+                let filtered = this.items;
+
+                if (this.currentFilter === 'expiring') {
+                    filtered = filtered.filter(i => {
+                        const days = Utils.getDaysRemaining(i.expiryDate);
+                        return days >= 0 && days <= 3;
+                    });
+                } else if (this.currentFilter === 'expired') {
+                    filtered = filtered.filter(i => Utils.getDaysRemaining(i.expiryDate) < 0);
+                }
+
+                return filtered.sort((a, b) => {
+                    const dateA = new Date(a.expiryDate);
+                    const dateB = new Date(b.expiryDate);
+                    if (this.currentSort === 'date-asc') return dateA - dateB;
+                    if (this.currentSort === 'date-desc') return dateB - dateA;
+                    if (this.currentSort === 'name-asc') return a.name.localeCompare(b.name);
+                    if (this.currentSort === 'category-asc') return a.category.localeCompare(b.category);
+                    return 0;
+                });
+            }
+
+            render() {
+                const t = Translations[this.lang];
+                const total = this.items.length;
+                const expired = this.items.filter(i => Utils.getDaysRemaining(i.expiryDate) < 0).length;
+                const expiring = this.items.filter(i => {
+                    const d = Utils.getDaysRemaining(i.expiryDate);
+                    return d >= 0 && d <= 3;
+                }).length;
+                const fresh = total - expired - expiring;
+
+                document.getElementById('stat-total').innerText = total;
+                document.getElementById('stat-fresh').innerText = fresh;
+                document.getElementById('stat-expiring').innerText = expiring;
+
+                document.getElementById('count-all').innerText = total;
+                document.getElementById('count-expiring').innerText = expiring;
+                document.getElementById('count-expired').innerText = expired;
+
+                const listContainer = document.getElementById('food-grid');
+                const emptyState = document.getElementById('empty-state');
+                const displayItems = this.getFilteredAndSortedItems();
+
+                listContainer.innerHTML = '';
+
+                if (displayItems.length === 0 && this.currentFilter !== 'history') {
+                    listContainer.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                } else {
+                    listContainer.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+
+                    if (this.currentFilter === 'history' && displayItems.length === 0) {
+                        listContainer.innerHTML = `<div class="col-span-full text-center text-slate-400 py-10">${t.no_alerts || 'No history'}</div>`;
+                        return;
+                    }
+
+                    displayItems.forEach((item, index) => {
+                        if (this.currentFilter === 'history') {
+                            this.renderHistoryCard(item, index, listContainer);
+                        } else {
+                            this.renderActiveCard(item, index, listContainer);
+                        }
+                    });
+                }
+            }
+
+            renderHistoryCard(item, index, container) {
+                const t = Translations[this.lang];
+                const el = document.createElement('div');
+                el.className = `food-card glass-panel p-4 rounded-2xl relative border border-slate-100 dark:border-slate-700/50 opacity-75`;
+                const actionText = item.action === 'consumed' ? t.history_consumed : t.history_deleted;
+                const actionColor = item.action === 'consumed' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+                
+                const priceDisplay = item.price ? `<span class="text-xs font-semibold bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded ml-2 text-slate-600 dark:text-slate-200">$${Number(item.price).toFixed(2)}</span>` : '';
+
+                el.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500">
+                                ${Utils.getCategoryIcon(item.category)}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-700 dark:text-slate-300 flex items-center">
+                                    ${item.name}
+                                    ${priceDisplay}
+                                </h3>
+                                <p class="text-xs text-slate-400">${actionText} ${item.actionDate.toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 ${actionColor}">
+                            ${item.action === 'consumed' ? t.msg_consumed : t.msg_removed} 
+                            (${item.quantity} ${t.unit})
+                        </span>
+                    </div>
+                `;
+                container.appendChild(el);
+            }
+
+            renderActiveCard(item, index, container) {
+                const t = Translations[this.lang];
+                const daysLeft = Utils.getDaysRemaining(item.expiryDate);
+                const status = Utils.getStatus(daysLeft);
+                
+                let statusColor = 'bg-nature-500';
+                let statusText = `${daysLeft} ${t.days_left}`;
+                let cardBorder = 'border-transparent';
+
+                if (status === 'expired') {
+                    statusColor = 'bg-danger-500';
+                    statusText = `${t.status_expired} ${Math.abs(daysLeft)} ${t.days_ago}`;
+                    cardBorder = 'border-red-500/50';
+                } else if (status === 'today') {
+                    statusColor = 'bg-warning-500';
+                    statusText = t.status_today;
+                    cardBorder = 'border-orange-500/50';
+                } else if (status === 'warning') {
+                    statusColor = 'bg-warning-400';
+                    statusText = `${t.status_warning} ${daysLeft} ${t.days}`;
+                    cardBorder = 'border-orange-300/50';
+                } else {
+                    statusText = `${daysLeft} ${t.days_left}`;
+                }
+
+                const catColors = {
+                    dairy: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+                    fruit: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+                    meat: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+                    grain: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
+                    drink: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+                    snack: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400',
+                    frozen: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+                    canned: 'bg-stone-100 text-stone-600 dark:bg-stone-900/30 dark:text-stone-400',
+                    condiment: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+                    other: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                };
+                const catClass = catColors[item.category] || catColors['other'];
+                const priceDisplay = item.price ? `<span class="ml-auto text-sm font-bold text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-black/20 px-2 py-1 rounded-lg">$${Number(item.price).toFixed(2)}</span>` : '';
+
+                const el = document.createElement('div');
+                el.className = `food-card glass-panel p-5 rounded-2xl relative group border ${cardBorder} animate-slide-up`;
+                el.style.animationDelay = `${index * 0.05}s`;
+                
+                el.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-3 rounded-xl ${catClass}">
+                            ${Utils.getCategoryIcon(item.category)}
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${status === 'expired' ? 'bg-red-100 text-red-700' : (status === 'warning' || status === 'today' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-nature-700')}">
+                                <span class="w-1.5 h-1.5 rounded-full ${status === 'expired' ? 'bg-red-500' : (status === 'warning' || status === 'today' ? 'bg-orange-500' : 'bg-nature-500')}"></span>
+                                ${status === 'expired' ? t.status_expired : t.status_fresh}
+                            </span>
+                            ${priceDisplay}
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white truncate" title="${item.name}">${item.name}</h3>
+                    
+                    <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>${Utils.formatDate(item.expiryDate, this.lang)}</span>
+                        <span class="mx-1">•</span>
+                        <span class="${status === 'expired' ? 'text-red-500 font-medium' : (status==='warning'?'text-orange-500 font-medium':'')}">${statusText}</span>
+                    </div>
+
+                    <div class="border-t border-slate-100 dark:border-slate-700 pt-3 flex justify-between items-center">
+                        <span class="text-xs text-slate-400 font-medium bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md">${item.quantity} ${t.unit}</span>
+                        
+                        <div class="flex items-center gap-1">
+                            <button onclick="app.consumeItem('${item.id}')" class="text-slate-400 hover:text-nature-600 transition-colors p-2 rounded-lg hover:bg-nature-50 dark:hover:bg-nature-900/20" title="Consume">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6,3V9a3,3,0,0,0,3,3v9a1,1,0,0,0,2,0V12a3,3,0,0,0,3-3V3a1,1,0,0,0-2,0V8a1,1,0,0,1-2,0V3A1,1,0,0,0,6,3Zm14,0a1,1,0,0,0-1,1V21a1,1,0,0,0,2,0V4A1,1,0,0,0,20,3Z"/></svg>
+                            </button>
+                            <button onclick="app.deleteItem('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    ${item.note ? `<div class="mt-2 text-xs text-slate-400 italic truncate border-l-2 border-slate-200 pl-2">${item.note}</div>` : ''}
+                `;
+                container.appendChild(el);
+            }
+
+            // --- Form & Modal Handling ---
+            openModal() {
+                const modal = document.getElementById('add-modal');
+                modal.classList.add('active');
+                this.switchTab('manual'); // Default to manual
+            }
+
+            closeModal() {
+                const modal = document.getElementById('add-modal');
+                modal.classList.remove('active');
+                document.getElementById('add-form').reset();
+                document.getElementById('inp-date').valueAsDate = new Date();
+                
+                // Reset Scan UI
+                this.scannedItems = [];
+                document.getElementById('preview-container').classList.add('hidden');
+                document.getElementById('upload-placeholder').classList.remove('hidden');
+                document.getElementById('fileInput').value = '';
+                document.getElementById('scan-results').classList.add('hidden');
+                document.getElementById('scan-status').innerText = '';
+                document.getElementById('scan-overlay').classList.add('hidden');
+            }
+
+            switchTab(tab) {
+                const manualView = document.getElementById('view-manual');
+                const scanView = document.getElementById('view-scan');
+                const btnManual = document.getElementById('tab-manual');
+                const btnScan = document.getElementById('tab-scan');
+
+                if (tab === 'manual') {
+                    manualView.classList.remove('hidden');
+                    scanView.classList.add('hidden');
+                    btnManual.classList.add('text-nature-600', 'border-nature-600');
+                    btnManual.classList.remove('text-slate-400', 'border-transparent');
+                    btnScan.classList.remove('text-nature-600', 'border-nature-600');
+                    btnScan.classList.add('text-slate-400', 'border-transparent');
+                } else {
+                    manualView.classList.add('hidden');
+                    scanView.classList.remove('hidden');
+                    btnScan.classList.add('text-nature-600', 'border-nature-600');
+                    btnScan.classList.remove('text-slate-400', 'border-transparent');
+                    btnManual.classList.remove('text-nature-600', 'border-nature-600');
+                    btnManual.classList.add('text-slate-400', 'border-transparent');
+                }
+            }
+
+            handleFormSubmit(e) {
+                e.preventDefault();
+                const name = document.getElementById('inp-name').value;
+                const category = document.getElementById('inp-category').value;
+                const date = document.getElementById('inp-date').value;
+                const quantity = document.getElementById('inp-quantity').value;
+                const price = document.getElementById('inp-price').value;
+                const note = document.getElementById('inp-note').value;
+
+                if (!name || !date) return;
+
+                const newItem = {
+                    id: Utils.generateId(),
+                    name,
+                    category,
+                    expiryDate: new Date(date).toISOString(),
+                    quantity,
+                    price: price ? parseFloat(price) : null,
+                    note
+                };
+
+                this.addItem(newItem);
+                this.closeModal();
+            }
+
+            // --- AI Scanning Logic ---
+            updateScanStatus(msg) {
+                document.getElementById('scan-status').innerText = msg;
+            }
+
+            async handleFileScan(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // UI Reset
+                const previewImg = document.getElementById('preview-img');
+                const previewContainer = document.getElementById('preview-container');
+                const uploadPlaceholder = document.getElementById('upload-placeholder');
+                const scanOverlay = document.getElementById('scan-overlay');
+                
+                previewImg.src = URL.createObjectURL(file);
+                previewContainer.classList.remove('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                scanOverlay.classList.remove('hidden'); // Start scan line animation
+
+                this.updateScanStatus("Reading receipt text (OCR)...");
+
+                try {
+                    // 1. Tesseract OCR
+                    const worker = await Tesseract.createWorker('eng+chi_tra');
+                    const ret = await worker.recognize(file);
+                    const extractedText = ret.data.text;
+                    await worker.terminate();
+
+                    if (!extractedText.trim()) throw new Error("No text found.");
+                    
+                    console.log("OCR:", extractedText);
+                    this.updateScanStatus("Analyzing with AI...");
+
+                    // 2. AI Processing
+                    const jsonData = await this.processWithAI(extractedText);
+                    
+                    // 3. Process Result
+                    this.scannedItems = jsonData.items.map(i => {
+                        const days = i.estimated_expiry_days || 7;
+                        const date = new Date();
+                        date.setDate(date.getDate() + days);
+                        
+                        return {
+                            id: Utils.generateId(),
+                            name: i.product_name,
+                            category: i.category || 'other', // From AI or default
+                            quantity: i.quantity || 1,
+                            price: i.price_each || null,
+                            expiryDate: date.toISOString().split('T')[0] // Keep as YYYY-MM-DD for input
+                        };
+                    });
+
+                    this.renderScannedItems();
+                    this.updateScanStatus("");
+                    scanOverlay.classList.add('hidden'); // Stop animation
+
+                } catch (err) {
+                    console.error(err);
+                    this.updateScanStatus("Error: " + err.message);
+                    scanOverlay.classList.add('hidden');
+                }
+            }
+
+            async processWithAI(ocrText) {
+                const apiKey = document.getElementById('apiKey').value.trim();
+                const apiUrl = document.getElementById('apiUrl').value.trim();
+                const model = document.getElementById('modelName').value.trim();
+
+                if (!apiKey) throw new Error("API Key missing.");
+
+                const systemPrompt = "You are a helpful API that converts receipt text into JSON.";
+                const userPrompt = `
+                    I have OCR text from a receipt. Please extract the items and return a JSON object with a single key 'items' which is an array of objects.
+                    Each object must have these keys:
+                    - "product_name" (string)
+                    - "quantity" (number, default to 1 if not specified)
+                    - "price_each" (number, extract price per unit. IMPORTANT: If quantity > 1, verify this is the UNIT price, NOT the line total. If only total is shown, divide total by quantity.)
+                    - "category" (string, choose exactly one that fits best from: dairy, fruit, meat, grain, drink, snack, frozen, canned, condiment, other)
+                    - "estimated_expiry_days" (number, reasonable estimate of days until expiration from today based on product type, e.g. fresh milk=7, canned beans=365, meat=3)
+
+                    OCR TEXT (may contain English/Chinese):
+                    """
+                    ${ocrText}
+                    """
+
+                    Return ONLY the raw JSON. Do not include markdown formatting.
+                `;
+
+                const payload = {
+                    model: model,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.2
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const txt = await response.text();
+                    throw new Error(`AI Error (${response.status})`);
+                }
+
+                const data = await response.json();
+                const content = data.choices?.[0]?.message?.content || "";
+                const cleanedContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
+                return JSON.parse(cleanedContent);
+            }
+
+            renderScannedItems() {
+                const container = document.getElementById('detected-items-list');
+                const resultsArea = document.getElementById('scan-results');
+                
+                container.innerHTML = '';
+                document.getElementById('scan-count').innerText = `${this.scannedItems.length} items`;
+                resultsArea.classList.remove('hidden');
+
+                if (this.scannedItems.length === 0) {
+                    container.innerHTML = '<div class="text-center text-sm text-slate-400">No items found.</div>';
+                    return;
+                }
+
+                this.scannedItems.forEach((item, idx) => {
+                    const el = document.createElement('div');
+                    el.className = 'flex items-center gap-3 bg-white dark:bg-slate-700 p-2 rounded-lg border border-slate-100 dark:border-slate-600';
+                    el.innerHTML = `
+                        <div class="text-nature-600">${Utils.getCategoryIcon(item.category)}</div>
+                        <div class="flex-1 min-w-0">
+                            <input type="text" value="${item.name}" onchange="app.updateScannedItem('${item.id}', 'name', this.value)" class="bg-transparent font-bold text-sm w-full focus:outline-none dark:text-white">
+                            <div class="flex gap-2 text-xs text-slate-400 mt-1">
+                                <span>Qty: <input type="number" value="${item.quantity}" class="w-8 bg-transparent text-center border-b border-slate-300 focus:outline-none" onchange="app.updateScannedItem('${item.id}', 'quantity', this.value)"></span>
+                                <span>$: <input type="number" value="${item.price || ''}" step="0.01" class="w-12 bg-transparent text-center border-b border-slate-300 focus:outline-none" placeholder="0.00" onchange="app.updateScannedItem('${item.id}', 'price', this.value)"></span>
+                                <input type="date" value="${item.expiryDate}" class="bg-transparent border-b border-slate-300 focus:outline-none w-24 text-center" onchange="app.updateScannedItem('${item.id}', 'expiryDate', this.value)">
+                                <select onchange="app.updateScannedItem('${item.id}', 'category', this.value)" class="bg-transparent border-none p-0 text-xs w-16">
+                                    <option value="dairy" ${item.category=='dairy'?'selected':''}>Dairy</option>
+                                    <option value="fruit" ${item.category=='fruit'?'selected':''}>Fruit</option>
+                                    <option value="meat" ${item.category=='meat'?'selected':''}>Meat</option>
+                                    <option value="grain" ${item.category=='grain'?'selected':''}>Grain</option>
+                                    <option value="drink" ${item.category=='drink'?'selected':''}>Drink</option>
+                                    <option value="snack" ${item.category=='snack'?'selected':''}>Snack</option>
+                                    <option value="frozen" ${item.category=='frozen'?'selected':''}>Frozen</option>
+                                    <option value="canned" ${item.category=='canned'?'selected':''}>Canned</option>
+                                    <option value="condiment" ${item.category=='condiment'?'selected':''}>Condiments</option>
+                                    <option value="other" ${item.category=='other'?'selected':''}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="app.removeScannedItem('${item.id}')" class="text-slate-400 hover:text-red-500">×</button>
+                    `;
+                    container.appendChild(el);
+                });
+            }
+
+            updateScannedItem(id, field, val) {
+                const idx = this.scannedItems.findIndex(i => i.id === id);
+                if (idx > -1) {
+                    if (field === 'price') {
+                         this.scannedItems[idx][field] = val ? parseFloat(val) : null;
+                    } else {
+                         this.scannedItems[idx][field] = val;
+                    }
+                }
+            }
+
+            removeScannedItem(id) {
+                this.scannedItems = this.scannedItems.filter(i => i.id !== id);
+                this.renderScannedItems();
+            }
+
+            importScannedItems() {
+                this.scannedItems.forEach(item => {
+                    // Finalize item structure
+                    item.note = ''; // Reset note as price is now a real field
+                    // Ensure ISO format for consistency
+                    if (item.expiryDate && !item.expiryDate.includes('T')) {
+                        item.expiryDate = new Date(item.expiryDate).toISOString();
+                    }
+                    this.addItem(item);
+                });
+                this.closeModal();
+                this.notif.showToast(`Imported ${this.scannedItems.length} items from receipt`, 'success');
+            }
+        }
+
+        // Initialize App
+        const app = new App();
+        window.app = app;
+        setTimeout(() => {
+            if(app.items.length === 0) app.loadMockData();
+        }, 500);
+
+    </script>
 </body>
 </html>
