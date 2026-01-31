@@ -185,6 +185,15 @@
             opacity: 1;
         }
 
+        /* Flyout Transitions */
+        #detail-flyout {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #flyout-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         /* Scanning Animation */
         .scan-line {
             position: absolute;
@@ -385,6 +394,91 @@
     <button onclick="app.openModal()" class="mobile-fab md:hidden bg-nature-600 hover:bg-nature-700 text-white p-4 rounded-full shadow-lg shadow-nature-600/40 active:scale-90 transition-transform">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
     </button>
+
+    <!-- Item Detail Flyout -->
+    <div id="detail-flyout" class="fixed inset-y-0 right-0 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl transform transition-transform duration-300 translate-x-full z-[70] flex flex-col border-l border-slate-200 dark:border-slate-700">
+        <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+           <!-- Header -->
+           <div class="flex justify-between items-start mb-8">
+               <button onclick="app.closeDetailFlyout()" class="p-2 -ml-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+               </button>
+               <div class="flex gap-2">
+                   <button onclick="app.deleteItemFromFlyout()" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors" title="Delete">
+                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                   </button>
+               </div>
+           </div>
+
+           <form id="edit-form" onsubmit="app.handleUpdateItem(event)" class="space-y-6">
+               <input type="hidden" id="edit-id">
+               
+               <!-- Icon & Name -->
+               <div class="flex flex-col items-center text-center mb-8">
+                   <div id="edit-icon-wrapper" class="w-24 h-24 rounded-full bg-nature-100 dark:bg-nature-900/30 text-nature-600 flex items-center justify-center mb-4 text-4xl shadow-inner overflow-hidden">
+                       <!-- Icon injected here -->
+                   </div>
+                   <input type="text" id="edit-name" class="text-3xl font-display font-bold text-center bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-nature-500 focus:outline-none w-full text-slate-800 dark:text-white transition-colors placeholder-slate-400 dark:placeholder-slate-600" placeholder="Item Name">
+                   <div id="edit-status-badge" class="mt-2"></div>
+               </div>
+
+               <!-- Details Grid -->
+               <div class="grid grid-cols-2 gap-4">
+                   <div class="space-y-1">
+                       <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_category">Category</label>
+                       <div class="relative">
+                           <select id="edit-category" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white appearance-none cursor-pointer">
+                                <!-- Options will be injected from main config -->
+                           </select>
+                           <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                           </div>
+                       </div>
+                   </div>
+                   <div class="space-y-1">
+                       <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_qty">Quantity</label>
+                       <div class="flex items-center">
+                           <button type="button" onclick="app.adjustEditQty(-1)" class="p-3 bg-slate-100 dark:bg-slate-800 rounded-l-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300">-</button>
+                           <input type="number" id="edit-quantity" class="w-full text-center bg-slate-50 dark:bg-slate-800/50 py-3 font-bold focus:outline-none text-slate-800 dark:text-white" min="1">
+                           <button type="button" onclick="app.adjustEditQty(1)" class="p-3 bg-slate-100 dark:bg-slate-800 rounded-r-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300">+</button>
+                       </div>
+                   </div>
+               </div>
+
+               <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                       <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_date">Expiry Date</label>
+                       <input type="date" id="edit-date" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white">
+                   </div>
+                   <div class="space-y-1">
+                       <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_price">Price</label>
+                       <div class="relative">
+                            <span class="absolute left-4 top-3 text-slate-400">$</span>
+                            <input type="number" id="edit-price" step="0.01" class="w-full glass-input pl-8 pr-4 py-3 rounded-xl text-slate-800 dark:text-white">
+                       </div>
+                   </div>
+               </div>
+
+               <div class="space-y-1">
+                   <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1" data-i18n="label_note">Notes</label>
+                   <textarea id="edit-note" rows="3" class="w-full glass-input px-4 py-3 rounded-xl text-slate-800 dark:text-white resize-none placeholder-slate-400"></textarea>
+               </div>
+
+               <div class="pt-4 flex gap-3">
+                   <button type="button" onclick="app.consumeItemFromFlyout()" class="flex-1 bg-nature-100 hover:bg-nature-200 dark:bg-nature-900/30 dark:hover:bg-nature-900/50 text-nature-700 dark:text-nature-400 font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6,3V9a3,3,0,0,0,3,3v9a1,1,0,0,0,2,0V12a3,3,0,0,0,3-3V3a1,1,0,0,0-2,0V8a1,1,0,0,1-2,0V3A1,1,0,0,0,6,3Zm14,0a1,1,0,0,0-1,1V21a1,1,0,0,0,2,0V4A1,1,0,0,0,20,3Z"/></svg>
+                       Consume
+                   </button>
+                   <button type="submit" class="flex-[2] bg-nature-600 hover:bg-nature-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-nature-500/30 transition-all">
+                       Save Changes
+                   </button>
+               </div>
+           </form>
+        </div>
+    </div>
+    
+    <!-- Overlay for flyout -->
+    <div id="flyout-overlay" onclick="app.closeDetailFlyout()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60] opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
     <!-- Add Item Modal -->
     <div id="add-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -872,6 +966,13 @@
                 // Setup File Input Listener
                 document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileScan(e));
                 
+                // Populate category options in edit flyout initially
+                const addCat = document.getElementById('inp-category');
+                const editCat = document.getElementById('edit-category');
+                if(addCat && editCat) {
+                    editCat.innerHTML = addCat.innerHTML;
+                }
+
                 this.render(); // Initial render
             }
 
@@ -906,10 +1007,16 @@
                     }
                 });
                 const select = document.getElementById('inp-category');
-                Array.from(select.options).forEach(opt => {
+                const editSelect = document.getElementById('edit-category');
+                const options = Array.from(select.options);
+                
+                options.forEach(opt => {
                     const key = 'cat_' + opt.value;
                     if(t[key]) opt.text = t[key];
                 });
+                
+                // Sync edit select options
+                if(editSelect) editSelect.innerHTML = select.innerHTML;
             }
 
             initTheme() {
@@ -977,6 +1084,19 @@
                 }
             }
 
+            // Wrapper for flyout context
+            consumeItemFromFlyout() {
+                const id = document.getElementById('edit-id').value;
+                this.consumeItem(id);
+                // If item still exists (qty > 0), refresh flyout data
+                const item = this.items.find(i => i.id === id);
+                if (item) {
+                    this.openDetailFlyout(item); // Refresh view
+                } else {
+                    this.closeDetailFlyout();
+                }
+            }
+
             deleteItem(id) {
                 const itemIndex = this.items.findIndex(i => i.id === id);
                 if (itemIndex === -1) return;
@@ -991,6 +1111,12 @@
                     'info',
                     () => this.undoAction(item)
                 );
+            }
+
+            deleteItemFromFlyout() {
+                const id = document.getElementById('edit-id').value;
+                this.deleteItem(id);
+                this.closeDetailFlyout();
             }
 
             addToHistory(item, action, qty = 0) {
@@ -1303,24 +1429,95 @@
                 const item = this.items.find(i => i.id === id);
                 if (!item) return;
 
-                // Open modal first
-                this.openModal();
+                this.openDetailFlyout(item);
+            }
+
+            // Flyout Logic
+            openDetailFlyout(item) {
+                const flyout = document.getElementById('detail-flyout');
+                const overlay = document.getElementById('flyout-overlay');
                 
-                // Populate fields
-                document.getElementById('item-id').value = item.id;
-                document.getElementById('inp-name').value = item.name;
-                document.getElementById('inp-category').value = item.category;
+                // Populate Icon & Header
+                document.getElementById('edit-icon-wrapper').innerHTML = Utils.getCategoryIcon(item.category);
+                document.getElementById('edit-name').value = item.name;
                 
-                // Handle date conversion for input
+                // Populate Status Badge
+                const days = Utils.getDaysRemaining(item.expiryDate);
+                const status = Utils.getStatus(days);
+                const badge = document.getElementById('edit-status-badge');
+                if (status === 'expired') {
+                    badge.innerHTML = `<span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold">Expired</span>`;
+                } else if (status === 'warning') {
+                    badge.innerHTML = `<span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">Expiring Soon</span>`;
+                } else {
+                    badge.innerHTML = `<span class="px-3 py-1 bg-nature-100 text-nature-600 rounded-full text-xs font-bold">Fresh</span>`;
+                }
+
+                // Populate Inputs
+                document.getElementById('edit-id').value = item.id;
+                document.getElementById('edit-category').value = item.category;
+                document.getElementById('edit-quantity').value = item.quantity;
+                document.getElementById('edit-price').value = item.price || '';
+                document.getElementById('edit-note').value = item.note || '';
+                
                 const dateObj = new Date(item.expiryDate);
                 const yyyy = dateObj.getFullYear();
                 const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
                 const dd = String(dateObj.getDate()).padStart(2, '0');
-                document.getElementById('inp-date').value = `${yyyy}-${mm}-${dd}`;
+                document.getElementById('edit-date').value = `${yyyy}-${mm}-${dd}`;
+
+                // Show
+                overlay.classList.remove('pointer-events-none');
+                overlay.classList.add('active');
+                flyout.classList.remove('translate-x-full');
+            }
+
+            closeDetailFlyout() {
+                const flyout = document.getElementById('detail-flyout');
+                const overlay = document.getElementById('flyout-overlay');
                 
-                document.getElementById('inp-quantity').value = item.quantity;
-                document.getElementById('inp-price').value = item.price || '';
-                document.getElementById('inp-note').value = item.note || '';
+                flyout.classList.add('translate-x-full');
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.classList.add('pointer-events-none');
+                }, 300);
+            }
+
+            adjustEditQty(delta) {
+                const input = document.getElementById('edit-quantity');
+                const newVal = parseInt(input.value || 0) + delta;
+                if(newVal > 0) input.value = newVal;
+            }
+
+            handleUpdateItem(e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-id').value;
+                if (!id) return;
+
+                const name = document.getElementById('edit-name').value;
+                const category = document.getElementById('edit-category').value;
+                const date = document.getElementById('edit-date').value;
+                const quantity = document.getElementById('edit-quantity').value;
+                const price = document.getElementById('edit-price').value;
+                const note = document.getElementById('edit-note').value;
+
+                const idx = this.items.findIndex(i => i.id === id);
+                if (idx > -1) {
+                    this.items[idx] = {
+                        ...this.items[idx],
+                        name,
+                        category,
+                        expiryDate: new Date(date).toISOString(),
+                        quantity,
+                        price: price ? parseFloat(price) : null,
+                        note
+                    };
+                    this.saveData();
+                    this.processNotifications(this.items[idx]);
+                    this.render();
+                    this.notif.showToast('Item updated', 'success');
+                }
+                this.closeDetailFlyout();
             }
 
             handleFormSubmit(e) {
@@ -1345,7 +1542,7 @@
                 };
 
                 if (id) {
-                    // Update existing
+                    // Update existing (from main modal - kept for legacy support if needed, though flyout is primary now)
                     const idx = this.items.findIndex(i => i.id === id);
                     if (idx > -1) {
                         this.items[idx] = { ...this.items[idx], ...itemData };
