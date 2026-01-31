@@ -849,8 +849,16 @@
         class App {
             constructor() {
                 this.lang = 'zh'; // Default Language Traditional Chinese
-                this.items = [];
-                this.history = []; 
+                
+                // Initialize from LocalStorage or default empty
+                const storedItems = localStorage.getItem('freshkeep_items');
+                this.items = storedItems ? JSON.parse(storedItems) : [];
+                
+                const storedHistory = localStorage.getItem('freshkeep_history');
+                this.history = storedHistory ? JSON.parse(storedHistory) : [];
+                // Rehydrate dates in history
+                this.history.forEach(h => h.actionDate = new Date(h.actionDate));
+
                 this.currentFilter = 'all';
                 this.currentSort = 'date-asc';
                 this.notif = new NotificationService(this);
@@ -863,6 +871,13 @@
 
                 // Setup File Input Listener
                 document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileScan(e));
+                
+                this.render(); // Initial render
+            }
+
+            saveData() {
+                localStorage.setItem('freshkeep_items', JSON.stringify(this.items));
+                localStorage.setItem('freshkeep_history', JSON.stringify(this.history));
             }
 
             updateDateDisplay() {
@@ -920,6 +935,7 @@
                     if (existingItem) {
                         existingItem.quantity = Number(existingItem.quantity) + Number(item.quantity);
                         this.processNotifications(existingItem);
+                        this.saveData();
                         this.notif.showToast(`${item.name} quantity updated (+${item.quantity})`);
                         this.render();
                         return;
@@ -927,6 +943,7 @@
                 }
 
                 this.items.push(item);
+                this.saveData();
                 if (!isUndo) {
                     this.processNotifications(item);
                     this.notif.showToast(`${item.name} ${Translations[this.lang].msg_added}`);
@@ -945,10 +962,12 @@
 
                 if (item.quantity > 1) {
                     item.quantity--;
+                    this.saveData();
                     this.render();
                     this.notif.showToast(`1 ${t.unit} ${item.name} ${t.msg_consumed}`, 'success');
                 } else {
                     this.items.splice(itemIndex, 1);
+                    this.saveData();
                     this.render();
                     this.notif.showToast(
                         `${item.name} ${t.msg_fully_consumed}`, 
@@ -964,6 +983,7 @@
                 const item = this.items[itemIndex];
                 this.items.splice(itemIndex, 1);
                 this.addToHistory(item, 'deleted');
+                this.saveData();
                 this.render();
                 const t = Translations[this.lang];
                 this.notif.showToast(
@@ -980,6 +1000,7 @@
                     action: action,
                     actionDate: new Date()
                 });
+                this.saveData();
             }
 
             undoAction(item) {
@@ -987,6 +1008,7 @@
                 if (this.history.length > 0 && this.history[0].id === item.id) {
                     this.history.shift();
                 }
+                this.saveData();
                 this.render();
             }
 
@@ -1014,11 +1036,13 @@
                     { id: '7', name: '醬油', category: 'condiment', expiryDate: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString(), quantity: 1, price: 6.50, note: '' },
                 ];
                 
-                this.items = []; 
+                // Clear existing
+                this.items = [];
                 mockItems.forEach(i => {
                     this.items.push(i);
                     this.processNotifications(i);
                 });
+                this.saveData(); // Save to local storage
                 this.render();
                 this.notif.showToast(this.lang === 'en' ? 'Demo data loaded' : '範例資料已載入');
             }
@@ -1088,6 +1112,13 @@
 
                 listContainer.innerHTML = '';
 
+                // Change layout based on filter
+                if (this.currentFilter === 'history') {
+                    listContainer.className = 'flex flex-col gap-3'; // List View
+                } else {
+                    listContainer.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'; // Grid View
+                }
+
                 if (displayItems.length === 0 && this.currentFilter !== 'history') {
                     listContainer.classList.add('hidden');
                     emptyState.classList.remove('hidden');
@@ -1113,31 +1144,24 @@
             renderHistoryCard(item, index, container) {
                 const t = Translations[this.lang];
                 const el = document.createElement('div');
-                el.className = `food-card glass-panel p-4 rounded-2xl relative border border-slate-100 dark:border-slate-700/50 opacity-75`;
+                el.className = `food-card glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-slate-300 dark:border-slate-600`;
+                
                 const actionText = item.action === 'consumed' ? t.history_consumed : t.history_deleted;
                 const actionColor = item.action === 'consumed' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
                 
-                const priceDisplay = item.price ? `<span class="text-xs font-semibold bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded ml-2 text-slate-600 dark:text-slate-200">$${Number(item.price).toFixed(2)}</span>` : '';
-
                 el.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500">
-                                ${Utils.getCategoryIcon(item.category)}
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-slate-700 dark:text-slate-300 flex items-center">
-                                    ${item.name}
-                                    ${priceDisplay}
-                                </h3>
-                                <p class="text-xs text-slate-400">${actionText} ${item.actionDate.toLocaleDateString()}</p>
-                            </div>
+                    <div class="flex items-center gap-4">
+                        <div class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500">
+                            ${Utils.getCategoryIcon(item.category)}
                         </div>
-                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 ${actionColor}">
-                            ${item.action === 'consumed' ? t.msg_consumed : t.msg_removed} 
-                            (${item.quantity} ${t.unit})
-                        </span>
+                        <div>
+                            <h3 class="font-bold text-slate-700 dark:text-slate-300">${item.name}</h3>
+                            <p class="text-xs text-slate-400">${actionText} ${item.actionDate.toLocaleDateString()} • ${item.quantity} ${t.unit}</p>
+                        </div>
                     </div>
+                    <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 ${actionColor}">
+                        ${item.action === 'consumed' ? t.msg_consumed : t.msg_removed}
+                    </span>
                 `;
                 container.appendChild(el);
             }
@@ -1183,8 +1207,9 @@
                 const priceDisplay = item.price ? `<span class="ml-auto text-sm font-bold text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-black/20 px-2 py-1 rounded-lg">$${Number(item.price).toFixed(2)}</span>` : '';
 
                 const el = document.createElement('div');
-                el.className = `food-card glass-panel p-5 rounded-2xl relative group border ${cardBorder} animate-slide-up`;
+                el.className = `food-card glass-panel p-5 rounded-2xl relative group border ${cardBorder} animate-slide-up cursor-pointer hover:border-nature-400 transition-all`;
                 el.style.animationDelay = `${index * 0.05}s`;
+                el.onclick = () => app.editItem(item.id);
                 
                 el.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
@@ -1213,10 +1238,10 @@
                         <span class="text-xs text-slate-400 font-medium bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-md">${item.quantity} ${t.unit}</span>
                         
                         <div class="flex items-center gap-1">
-                            <button onclick="app.consumeItem('${item.id}')" class="text-slate-400 hover:text-nature-600 transition-colors p-2 rounded-lg hover:bg-nature-50 dark:hover:bg-nature-900/20" title="Consume">
+                            <button onclick="event.stopPropagation(); app.consumeItem('${item.id}')" class="text-slate-400 hover:text-nature-600 transition-colors p-2 rounded-lg hover:bg-nature-50 dark:hover:bg-nature-900/20" title="Consume">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6,3V9a3,3,0,0,0,3,3v9a1,1,0,0,0,2,0V12a3,3,0,0,0,3-3V3a1,1,0,0,0-2,0V8a1,1,0,0,1-2,0V3A1,1,0,0,0,6,3Zm14,0a1,1,0,0,0-1,1V21a1,1,0,0,0,2,0V4A1,1,0,0,0,20,3Z"/></svg>
                             </button>
-                            <button onclick="app.deleteItem('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove">
+                            <button onclick="event.stopPropagation(); app.deleteItem('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>
@@ -1238,6 +1263,7 @@
                 const modal = document.getElementById('add-modal');
                 modal.classList.remove('active');
                 document.getElementById('add-form').reset();
+                document.getElementById('item-id').value = ''; // Clear ID
                 document.getElementById('inp-date').valueAsDate = new Date();
                 
                 // Reset Scan UI
@@ -1273,8 +1299,33 @@
                 }
             }
 
+            editItem(id) {
+                const item = this.items.find(i => i.id === id);
+                if (!item) return;
+
+                // Open modal first
+                this.openModal();
+                
+                // Populate fields
+                document.getElementById('item-id').value = item.id;
+                document.getElementById('inp-name').value = item.name;
+                document.getElementById('inp-category').value = item.category;
+                
+                // Handle date conversion for input
+                const dateObj = new Date(item.expiryDate);
+                const yyyy = dateObj.getFullYear();
+                const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(dateObj.getDate()).padStart(2, '0');
+                document.getElementById('inp-date').value = `${yyyy}-${mm}-${dd}`;
+                
+                document.getElementById('inp-quantity').value = item.quantity;
+                document.getElementById('inp-price').value = item.price || '';
+                document.getElementById('inp-note').value = item.note || '';
+            }
+
             handleFormSubmit(e) {
                 e.preventDefault();
+                const id = document.getElementById('item-id').value;
                 const name = document.getElementById('inp-name').value;
                 const category = document.getElementById('inp-category').value;
                 const date = document.getElementById('inp-date').value;
@@ -1284,8 +1335,7 @@
 
                 if (!name || !date) return;
 
-                const newItem = {
-                    id: Utils.generateId(),
+                const itemData = {
                     name,
                     category,
                     expiryDate: new Date(date).toISOString(),
@@ -1294,7 +1344,22 @@
                     note
                 };
 
-                this.addItem(newItem);
+                if (id) {
+                    // Update existing
+                    const idx = this.items.findIndex(i => i.id === id);
+                    if (idx > -1) {
+                        this.items[idx] = { ...this.items[idx], ...itemData };
+                        this.saveData();
+                        this.processNotifications(this.items[idx]); // Update notifs if date changed
+                        this.render();
+                        this.notif.showToast('Item updated', 'success');
+                    }
+                } else {
+                    // New item
+                    itemData.id = Utils.generateId();
+                    this.addItem(itemData);
+                }
+
                 this.closeModal();
             }
 
@@ -1494,9 +1559,7 @@
         // Initialize App
         const app = new App();
         window.app = app;
-        setTimeout(() => {
-            if(app.items.length === 0) app.loadMockData();
-        }, 500);
+        // Auto-load removed as requested. User can load demo data manually.
 
     </script>
 </body>
